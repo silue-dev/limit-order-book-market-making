@@ -42,6 +42,7 @@ class OrderList:
         self.tail_order = None
         self.length = 0
         self.volume = 0
+        self.last = None  # helper for iteration
     
     def add_order(self, order):
         order.timestamp = time()
@@ -73,6 +74,18 @@ class OrderList:
             elif order.next_order == None and order.prev_order != None:
                 order.prev_order.next_order = None
                 self.tail_order = order.prev_order
+    
+    def __iter__(self):
+        self.last = self.head_order
+        return self
+
+    def __next__(self):
+        if self.last == None:
+            raise StopIteration
+        else:
+            return_value = self.last
+            self.last = self.last.next_order
+            return return_value
     
 class OrderTree:
     """
@@ -135,8 +148,14 @@ class OrderTree:
             return None
     
     def add_order(self, order):
-        # TODO #
-        pass
+        if self.order_exists(order.timestamp):
+            self.del_order(order.timestamp)
+        self.num_orders += 1
+        if order.price not in self.price_map:
+            self.create_price(order.price)
+        self.price_map[order.price].append_order(order)
+        self.order_map[order.order_id] = order
+        self.volume += order.quantity
 
     def del_order(self, order_id):
         order = self.order_map[order_id]
