@@ -93,7 +93,7 @@ class OrderTree:
     (i.e., price levels) on that side. As the name suggests, this
     entire side is structured as a (red-black) tree. 
     
-    To total order book is composed of two order trees, one for 
+    The total order book is composed of two order trees, one for 
     the bid side and one for the ask side.
 
     """
