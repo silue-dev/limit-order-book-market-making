@@ -2,6 +2,10 @@ from collections import deque
 from orders import OrderTree
 
 class OrderBook:
+    """
+    The order book.
+    
+    """
     def __init__(self):
         self.bids = OrderTree()
         self.asks = OrderTree()
@@ -15,4 +19,13 @@ class OrderBook:
         pass
     
     def del_order():
+        pass
+
+    def cancel_order():
+        pass
+
+    def get_best_bid():
+        pass
+
+    def get_best_ask():
         pass
