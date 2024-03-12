@@ -10,22 +10,23 @@ class Order:
     side (str):         The side of the order ('bid' or 'ask').
     price (float):      The price of the order.
     quantity (float):   The quantity of the order.
-    order_type (str):   The type of the order ('limit' or 'ioc').
+    type (str):         The type of the order ('market', 'limit', or 'ioc').
 
     """
-    def __init__(self, side, price, quantity, order_type, order_list):
+    def __init__(self, side, price, quantity, type, order_list):
         self.side = side
         self.price = round(price, 1)
         self.quantity = round(quantity, 1)
-        self.order_type = order_type
+        self.type = type
         self.timestamp = None
         
+        self.id = None
         self.next_order = None
         self.prev_order = None
         self.order_list = order_list
     
     def __str__(self):
-        return '{} {} for {} units @ ${} [t={}]'.format(self.order_type,
+        return '{} {} for {} units @ ${} [t={}]'.format(self.type,
                                                         self.side,
                                                         self.quantity,
                                                         self.price,
@@ -100,7 +101,7 @@ class OrderTree:
     def __init__(self):
         self.price_map = SortedDict()           # price : OrderList
         self.prices = self.price_map.keys()
-        self.order_map = {}                     # order_id : Order
+        self.order_map = {}                     # id : Order
         self.depth = 0
         self.volume = 0
         self.num_orders = 0
@@ -148,20 +149,20 @@ class OrderTree:
             return None
     
     def add_order(self, order):
-        if self.order_exists(order.timestamp):
-            self.del_order(order.timestamp)
+        if self.order_exists(order.id):
+            self.del_order(order.id)
         self.num_orders += 1
         if order.price not in self.price_map:
             self.add_price(order.price)
         self.price_map[order.price].append_order(order)
-        self.order_map[order.order_id] = order
+        self.order_map[order.id] = order
         self.volume += order.quantity
 
-    def del_order(self, order_id):
-        order = self.order_map[order_id]
+    def del_order(self, id):
+        order = self.order_map[id]
         order.order_list.remove_order(order)
         if len(order.order_list) == 0:
             self.del_price(order.price)
-        del self.order_map[order_id]
+        del self.order_map[id]
         self.num_orders -= 1
         self.volume -= order.quantity
