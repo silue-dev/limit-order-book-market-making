@@ -25,7 +25,7 @@ class Order:
         self.order_list = order_list
     
     def __str__(self):
-        return "{} {} for {} units @ ${} [t={}]".format(self.order_type,
+        return '{} {} for {} units @ ${} [t={}]'.format(self.order_type,
                                                         self.side,
                                                         self.quantity,
                                                         self.price,
@@ -152,7 +152,7 @@ class OrderTree:
             self.del_order(order.timestamp)
         self.num_orders += 1
         if order.price not in self.price_map:
-            self.create_price(order.price)
+            self.add_price(order.price)
         self.price_map[order.price].append_order(order)
         self.order_map[order.order_id] = order
         self.volume += order.quantity
@@ -161,7 +161,7 @@ class OrderTree:
         order = self.order_map[order_id]
         order.order_list.remove_order(order)
         if len(order.order_list) == 0:
-            self.remove_price(order.price)
+            self.del_price(order.price)
         del self.order_map[order_id]
         self.num_orders -= 1
         self.volume -= order.quantity
