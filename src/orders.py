@@ -7,13 +7,19 @@ class Order:
 
     Arguments
     ---------
-    side (str):         The side of the order ('bid' or 'ask').
-    price (float):      The price of the order.
-    quantity (float):   The quantity of the order.
-    type (str):         The type of the order ('market', 'limit', or 'ioc').
+    side:        The side of the order ('bid' or 'ask').
+    price:       The price of the order.
+    quantity:    The quantity of the order.
+    type:        The type of the order ('market', 'limit', or 'ioc').
+    order_list:  The list of orders at the price level this order is in.
 
     """
-    def __init__(self, side, price, quantity, type, order_list):
+    def __init__(self, 
+                 side: str, 
+                 price: float, 
+                 quantity: float, 
+                 type: str, 
+                 order_list: 'OrderList'):
         self.side = side
         self.price = round(price, 1)
         self.quantity = round(quantity, 1)
@@ -45,7 +51,11 @@ class OrderList:
         self.volume = 0
         self.last = None  # helper for iteration
     
-    def add_order(self, order):
+    def add_order(self, order: Order):
+        """
+        Adds a given order to the order list.
+
+        """
         order.timestamp = time()
         if self.length == 0:
             order.next_order = None
@@ -60,7 +70,11 @@ class OrderList:
         self.length += 1
         self.volume += order.quantity
     
-    def del_order(self, order):
+    def del_order(self, order: Order):
+        """
+        Deletes a given order from the order list.
+        
+        """
         if self.length == 0:
             return
         else:
@@ -98,7 +112,7 @@ class OrderTree:
     the bid side and one for the ask side.
 
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.price_map = SortedDict()           # price : OrderList
         self.prices = self.price_map.keys()
         self.order_map = {}                     # id : Order
@@ -106,49 +120,89 @@ class OrderTree:
         self.volume = 0
         self.num_orders = 0
     
-    def add_price(self, price):
+    def add_price(self, price: float) -> None:
+        """
+        Adds a new given price level to the order tree.
+        
+        """
         new_order_list = OrderList()
         self.price_map[price] = new_order_list
         self.depth += 1
 
-    def del_price(self, price):
+    def del_price(self, price: float) -> None:
+        """
+        Deletes a given price level from the order tree.
+        
+        """
         del self.price_map[price]
         self.depth -= 1
     
-    def price_exists(self, price):
+    def price_exists(self, price: float) -> bool:
+        """
+        Checks if a given price level exists in the order tree.
+        
+        """
         return price in self.price_map
     
-    def order_exists(self, order):
+    def order_exists(self, order: Order) -> bool:
+        """
+        Checks if a given order exists in the order tree.
+        
+        """
         return order in self.order_map
 
-    def min_price(self):
+    def min_price(self) -> float | None:
+        """"
+        Returns the lowest price in the order tree.
+
+        """
         if self.depth > 0:
             return self.prices[0]
         else:
             return None
         
-    def max_price(self):
+    def max_price(self) -> float | None:
+        """"
+        Returns the highest price in the order tree.
+
+        """
         if self.depth > 0:
             return self.prices[-1]
         else:
             return None
         
-    def get_order_list(self, price):
+    def get_order_list(self, price: float) -> OrderList:
+        """
+        Returns the order list associated with the given price level.
+
+        """
         return self.price_map[price]
 
-    def max_price_order_list(self):
+    def max_price_order_list(self) -> OrderList:
+        """
+        Returns the order list associated with the highest price level.
+
+        """
         if self.depth > 0:
             return self.get_order_list(self.max_price())
         else:
             return None
 
-    def max_price_order_list(self):
+    def min_price_order_list(self) -> OrderList:
+        """
+        Returns the order list associated with the lowest price level.
+
+        """
         if self.depth > 0:
             return self.get_order_list(self.min_price())
         else:
             return None
     
-    def add_order(self, order):
+    def add_order(self, order: Order) -> None:
+        """
+        Adds a given order to the order tree.
+
+        """
         if self.order_exists(order.id):
             self.del_order(order.id)
         self.num_orders += 1
@@ -158,7 +212,10 @@ class OrderTree:
         self.order_map[order.id] = order
         self.volume += order.quantity
 
-    def del_order(self, id):
+    def del_order(self, id: any) -> None:
+        """
+        Deletes an order from the order tree, given its order id.
+        """
         order = self.order_map[id]
         order.order_list.remove_order(order)
         if len(order.order_list) == 0:
