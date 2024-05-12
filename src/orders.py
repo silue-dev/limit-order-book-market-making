@@ -215,6 +215,7 @@ class OrderTree:
     def del_order(self, id: any) -> None:
         """
         Deletes an order from the order tree, given its order id.
+        
         """
         order = self.order_map[id]
         order.order_list.remove_order(order)
