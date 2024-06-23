@@ -18,7 +18,7 @@ class OrderBook:
 
         Arguments
         ---------
-        order:  The order to be added.
+        order :  The order to be added.
 
         """
         if order.type == 'market':
@@ -28,13 +28,37 @@ class OrderBook:
         elif order.type == 'ioc':
             self.add_ioc_order(order)
     
-    def add_market_order(self, order):
+    def add_market_order(self, order: Order):
+        """
+        Adds a makert order to the order book.
+
+        Arguments
+        ---------
+        order :  The market order to be added.
+
+        """
         pass
 
-    def add_limit_order(self, order):
+    def add_limit_order(self, order: Order):
+        """
+        Adds a limit order to the order book.
+
+        Arguments
+        ---------
+        order :  The limit order to be added.
+
+        """
         pass
 
-    def add_ioc_order(self, order):
+    def add_ioc_order(self, order: Order):
+        """
+        Adds an IOC order to the order book.
+
+        Arguments
+        ---------
+        order :  The IOC order to be added.
+
+        """
         pass
 
     def del_order():

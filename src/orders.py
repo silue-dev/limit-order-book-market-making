@@ -7,11 +7,11 @@ class Order:
 
     Arguments
     ---------
-    side:        The side of the order ('bid' or 'ask').
-    price:       The price of the order.
-    quantity:    The quantity of the order.
-    type:        The type of the order ('market', 'limit', or 'ioc').
-    order_list:  The list of orders at the price level this order is in.
+    side       :  The side of the order ('bid' or 'ask').
+    price      :  The price of the order.
+    quantity   :  The quantity of the order.
+    type       :  The type of the order ('market', 'limit', or 'ioc').
+    order_list :  The list of orders at the price level this order is in.
 
     """
     def __init__(self, 
@@ -55,6 +55,10 @@ class OrderList:
         """
         Adds a given order to the order list.
 
+        Arguments
+        ---------
+        order :  The order to be added.
+
         """
         order.timestamp = time()
         if self.length == 0:
@@ -73,6 +77,10 @@ class OrderList:
     def del_order(self, order: Order):
         """
         Deletes a given order from the order list.
+
+        Arguments
+        ---------
+        order :  The order to be deleted.
         
         """
         if self.length == 0:
@@ -104,18 +112,18 @@ class OrderList:
     
 class OrderTree:
     """
-    An entire side of the order book, composed of all order lists
-    (i.e., price levels) on that side. As the name suggests, this
-    entire side is structured as a (red-black) tree. 
+    An entire side of the order book, composed of all order lists (i.e., 
+    price levels) on that side. As the name suggests, this entire side 
+    is structured as a (red-black) tree. 
     
-    The total order book is composed of two order trees, one for 
-    the bid side and one for the ask side.
+    The total order book is composed of two order trees, one for the 
+    bid side and one for the ask side.
 
     """
     def __init__(self) -> None:
-        self.price_map = SortedDict()           # price : OrderList
-        self.prices = self.price_map.keys()
-        self.order_map = {}                     # id : Order
+        self.price_map = SortedDict()  # a sorted dictionary of price levels
+        self.prices = self.price_map.keys()  
+        self.order_map = {}            # a dictionary of orders by id
         self.depth = 0
         self.volume = 0
         self.num_orders = 0
@@ -123,6 +131,10 @@ class OrderTree:
     def add_price(self, price: float) -> None:
         """
         Adds a new given price level to the order tree.
+
+        Arguments
+        ---------
+        price :  The price level to be added.
         
         """
         new_order_list = OrderList()
@@ -132,6 +144,10 @@ class OrderTree:
     def del_price(self, price: float) -> None:
         """
         Deletes a given price level from the order tree.
+
+        Arguments
+        ---------
+        price :  The price level to be deleted.
         
         """
         del self.price_map[price]
@@ -140,6 +156,14 @@ class OrderTree:
     def price_exists(self, price: float) -> bool:
         """
         Checks if a given price level exists in the order tree.
+
+        Arguments
+        ---------
+        price :  The price level to be checked.
+
+        Returns
+        -------
+        Whether or not the price level exists.
         
         """
         return price in self.price_map
@@ -147,6 +171,14 @@ class OrderTree:
     def order_exists(self, order: Order) -> bool:
         """
         Checks if a given order exists in the order tree.
+
+        Arguments
+        ---------
+        order :  The order to be checked.
+
+        Returns
+        -------
+        Whether or not the order exists.
         
         """
         return order in self.order_map
@@ -175,6 +207,14 @@ class OrderTree:
         """
         Returns the order list associated with the given price level.
 
+        Arguments
+        ---------
+        price :  The price level.
+
+        Returns
+        -------
+        The associated order list.
+
         """
         return self.price_map[price]
 
@@ -202,6 +242,10 @@ class OrderTree:
         """
         Adds a given order to the order tree.
 
+        Arguments
+        ---------
+        order :  The order to be added.
+
         """
         if self.order_exists(order.id):
             self.del_order(order.id)
@@ -215,6 +259,10 @@ class OrderTree:
     def del_order(self, id: any) -> None:
         """
         Deletes an order from the order tree, given its order id.
+
+        Arguments
+        ---------
+        id :  The id of the order to be deleted.
         
         """
         order = self.order_map[id]
