@@ -1,4 +1,5 @@
 from time import time
+from decimal import Decimal
 from sortedcontainers import SortedDict
 
 class Order:
@@ -7,29 +8,42 @@ class Order:
 
     Arguments
     ---------
+    id         :  The id of the order.
     side       :  The side of the order ('bid' or 'ask').
     price      :  The price of the order.
     quantity   :  The quantity of the order.
     type       :  The type of the order ('market', 'limit', or 'ioc').
-    order_list :  The list of orders at the price level this order is in.
 
     """
     def __init__(self, 
+                 id: str,
                  side: str, 
                  price: float, 
                  quantity: float, 
-                 type: str, 
-                 order_list: 'OrderList'):
+                 type: str,
+                 precision: str = '0.1') -> None:
+        self.id = id
         self.side = side
-        self.price = round(price, 1)
-        self.quantity = round(quantity, 1)
+        self.precision = precision
+        self.price = Decimal(price).quantize(Decimal(precision))
+        self.quantity = Decimal(quantity).quantize(Decimal(precision))
         self.type = type
         self.timestamp = None
         
-        self.id = None
         self.next_order = None
         self.prev_order = None
-        self.order_list = order_list
+        self.order_list = None
+
+    def update_quantity(self, new_quantity: Decimal) -> None:
+        """
+        Updates the quantity of the order.
+
+        Arguments
+        ---------
+        new_quantity :  The new quantity to assign to the order.
+
+        """
+        self.quantity = Decimal(new_quantity).quantize(Decimal(self.precision))
     
     def __str__(self):
         return '{} {} for {} units @ ${} [t={}]'.format(self.type,
@@ -43,15 +57,29 @@ class OrderList:
     A (doubly linked) list of orders, representing one price level 
     of the order book.
 
+    Arguments
+    ---------
+    side  :  The side of the tree w.r.t. the order book ('bid' or 'ask').
+    price :  The price level of the order list.
+
     """
-    def __init__(self):
+    def __init__(self, side: str, price: Decimal) -> None:
+        self.side = side
+        self.price = price
         self.head_order = None
         self.tail_order = None
         self.length = 0
         self.volume = 0
         self.last = None  # helper for iteration
+
+    def get_head_order(self) -> Order:
+        """
+        Returns the head order.
+
+        """
+        return self.head_order
     
-    def add_order(self, order: Order):
+    def add_order(self, order: Order) -> None:
         """
         Adds a given order to the order list.
 
@@ -74,7 +102,7 @@ class OrderList:
         self.length += 1
         self.volume += order.quantity
     
-    def del_order(self, order: Order):
+    def del_order(self, order: Order) -> None:
         """
         Deletes a given order from the order list.
 
@@ -119,8 +147,13 @@ class OrderTree:
     The total order book is composed of two order trees, one for the 
     bid side and one for the ask side.
 
+    Arguments
+    ---------
+    side :  The side of the tree w.r.t. the order book ('bid' or 'ask').
+
     """
-    def __init__(self) -> None:
+    def __init__(self, side: str) -> None:
+        self.side = side
         self.price_map = SortedDict()  # a sorted dictionary of price levels
         self.prices = self.price_map.keys()  
         self.order_map = {}            # a dictionary of orders by id
@@ -128,7 +161,7 @@ class OrderTree:
         self.volume = 0
         self.num_orders = 0
     
-    def add_price(self, price: float) -> None:
+    def add_price(self, price: Decimal) -> None:
         """
         Adds a new given price level to the order tree.
 
@@ -137,11 +170,11 @@ class OrderTree:
         price :  The price level to be added.
         
         """
-        new_order_list = OrderList()
+        new_order_list = OrderList(self.side, price)
         self.price_map[price] = new_order_list
         self.depth += 1
 
-    def del_price(self, price: float) -> None:
+    def del_price(self, price: Decimal) -> None:
         """
         Deletes a given price level from the order tree.
 
@@ -153,7 +186,7 @@ class OrderTree:
         del self.price_map[price]
         self.depth -= 1
     
-    def price_exists(self, price: float) -> bool:
+    def price_exists(self, price: Decimal) -> bool:
         """
         Checks if a given price level exists in the order tree.
 
@@ -183,7 +216,7 @@ class OrderTree:
         """
         return order in self.order_map
 
-    def min_price(self) -> float | None:
+    def get_min_price(self) -> Decimal | None:
         """"
         Returns the lowest price in the order tree.
 
@@ -193,7 +226,7 @@ class OrderTree:
         else:
             return None
         
-    def max_price(self) -> float | None:
+    def get_max_price(self) -> Decimal | None:
         """"
         Returns the highest price in the order tree.
 
@@ -203,7 +236,7 @@ class OrderTree:
         else:
             return None
         
-    def get_order_list(self, price: float) -> OrderList:
+    def get_order_list(self, price: Decimal) -> OrderList:
         """
         Returns the order list associated with the given price level.
 
@@ -218,7 +251,7 @@ class OrderTree:
         """
         return self.price_map[price]
 
-    def max_price_order_list(self) -> OrderList:
+    def get_max_price_order_list(self) -> OrderList:
         """
         Returns the order list associated with the highest price level.
 
@@ -228,7 +261,7 @@ class OrderTree:
         else:
             return None
 
-    def min_price_order_list(self) -> OrderList:
+    def get_min_price_order_list(self) -> OrderList:
         """
         Returns the order list associated with the lowest price level.
 
