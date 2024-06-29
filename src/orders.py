@@ -1,5 +1,6 @@
 from time import time
 from decimal import Decimal
+from typing import Iterator
 from sortedcontainers import SortedDict
 
 class Order:
@@ -20,13 +21,12 @@ class Order:
                  side: str, 
                  price: float, 
                  quantity: float, 
-                 type: str,
-                 precision: str = '0.1') -> None:
+                 type: str) -> None:
         self.id = id
         self.side = side
-        self.precision = precision
-        self.price = Decimal(price).quantize(Decimal(precision))
-        self.quantity = Decimal(quantity).quantize(Decimal(precision))
+        self.precision = '0.1'
+        self.price = Decimal(price).quantize(Decimal(self.precision))
+        self.quantity = Decimal(quantity).quantize(Decimal(self.precision))
         self.type = type
         self.timestamp = None
         
@@ -45,12 +45,17 @@ class Order:
         """
         self.quantity = Decimal(new_quantity).quantize(Decimal(self.precision))
     
-    def __str__(self):
-        return '{} {} for {} units @ ${} [t={}]'.format(self.type,
-                                                        self.side,
-                                                        self.quantity,
-                                                        self.price,
-                                                        self.timestamp)
+    def __str__(self) -> None:
+        """
+        Returns a string representation of the order.
+        
+        """
+        return '{} {} for {} units @ ${} [id={}, t={}]'.format(self.type,
+                                                               self.side,
+                                                               self.quantity,
+                                                               self.price,
+                                                               self.id,
+                                                               self.timestamp)
 
 class OrderList:
     """
@@ -89,6 +94,7 @@ class OrderList:
 
         """
         order.timestamp = time()
+
         if self.length == 0:
             order.next_order = None
             order.prev_order = None
@@ -99,6 +105,7 @@ class OrderList:
             order.prev_order = self.tail_order
             self.tail_order.next_order = order
             self.tail_order = order
+
         self.length += 1
         self.volume += order.quantity
     
@@ -119,19 +126,31 @@ class OrderList:
             if order.next_order != None and order.prev_order != None:
                 order.next_order.prev_order = order.prev_order
                 order.prev_order.next_order = order.next_order
+            # If the order is the head order
             elif order.next_order != None and order.prev_order == None:
                 order.next_order.prev_order = None
                 self.head_order = order.next_order
+            # If the order is the tail order
             elif order.next_order == None and order.prev_order != None:
                 order.prev_order.next_order = None
                 self.tail_order = order.prev_order
     
-    def __iter__(self):
+    def __iter__(self) -> Iterator['OrderList']:
+        """
+        Initializes the iterator by setting the starting point to 
+        the head order of the list and returns the instance itself 
+        as an iterator object.
+
+        """
         self.last = self.head_order
         return self
 
-    def __next__(self):
-        if self.last == None:
+    def __next__(self) -> Order:
+        """
+        Returns the next order in the list during an iteration.
+
+        """
+        if self.last is None:
             raise StopIteration
         else:
             return_value = self.last
@@ -257,7 +276,7 @@ class OrderTree:
 
         """
         if self.depth > 0:
-            return self.get_order_list(self.max_price())
+            return self.get_order_list(self.get_max_price())
         else:
             return None
 
@@ -267,13 +286,14 @@ class OrderTree:
 
         """
         if self.depth > 0:
-            return self.get_order_list(self.min_price())
+            return self.get_order_list(self.get_min_price())
         else:
             return None
     
     def add_order(self, order: Order) -> None:
         """
-        Adds a given order to the order tree.
+        Adds a given order to the order tree. If the order (id) already exists,
+        performs an update by simply removing the existing order and adding the new one.
 
         Arguments
         ---------
@@ -285,7 +305,7 @@ class OrderTree:
         self.num_orders += 1
         if order.price not in self.price_map:
             self.add_price(order.price)
-        self.price_map[order.price].append_order(order)
+        self.price_map[order.price].add_order(order)
         self.order_map[order.id] = order
         self.volume += order.quantity
 
@@ -300,8 +320,10 @@ class OrderTree:
         """
         order = self.order_map[id]
         order.order_list.remove_order(order)
+
         if len(order.order_list) == 0:
             self.del_price(order.price)
         del self.order_map[id]
+
         self.num_orders -= 1
         self.volume -= order.quantity
