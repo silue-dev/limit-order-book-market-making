@@ -20,7 +20,7 @@ class OrderBook:
 
         Arguments
         ---------
-        order :  The order to be added, in dictionary form.
+        order_dict :  The order to be added, in dictionary form.
 
         """
         order = self.to_order_object(order_dict)
@@ -48,13 +48,11 @@ class OrderBook:
                 best_ask_order_list = self.asks.get_min_price_order_list()
                 quantity_remaining = self.execute_trade(best_ask_order_list, 
                                                         quantity_remaining)
-        
         elif order.side == 'ask':
             while quantity_remaining > 0 and self.bids:
                 best_bid_order_list = self.bids.get_max_price_order_list()
                 quantity_remaining = self.execute_trade(best_bid_order_list, 
                                                         quantity_remaining)
-                
         else:
             error_msg = f'Invalid order side "{order.side}". '
             requirement_msg = 'Order side must be either "bid" or "ask". '
@@ -79,17 +77,20 @@ class OrderBook:
         quantity_remaining = quantity
         while len(order_list > 0 and quantity_remaining > 0):
             head_order = order_list.head_order
-
+            
             if quantity_remaining < head_order.quantity:
-                # Update the head order in the order list
                 new_head_order_quantity = head_order.quantity - quantity_remaining
                 head_order.update_quantity(new_head_order_quantity)
-
-                # Update the tape
                 quantity_traded = quantity_remaining
                 self.add_trade_to_tape(order_list, quantity_traded)
                 quantity_remaining = 0
-        
+
+            if quantity_remaining >= head_order.quantity:
+                order_list.del_order(order_list.head_order)
+                quantity_traded = quantity_remaining
+                self.add_trade_to_tape(order_list, quantity_traded)
+                quantity_remaining = quantity_remaining - head_order.quantity
+
         return quantity_remaining
     
     def add_trade_to_tape(self,
@@ -122,7 +123,31 @@ class OrderBook:
         order :  The limit order to be added.
 
         """
-        pass
+        quantity_remaining = order.quantity
+
+        if order.side == 'bid':
+            while quantity_remaining > 0:
+                best_bid_order_list = self.bids.get_max_price_order_list()
+                if order.price < best_ask_order_list.price:
+                    target_bid_order_list = self.bids.get_order_list(order.price)
+                    target_bid_order_list.add_order(order)
+                    quantity_remaining = 0
+                else:
+                    while order.price >= best_ask_order_list.price and self.asks:
+                        quantity_remaining = self.execute_trade(best_ask_order_list, 
+                                                                quantity_remaining)
+
+        elif order.side == 'ask':
+            best_ask_order_list = self.asks.get_min_price_order_list()
+            if order.price > best_bid_order_list.price:
+                target_ask_order_list = self.asks.get_order_list(order.price)
+                target_ask_order_list.add_order(order)
+
+        else:
+            error_msg = f'Invalid order side "{order.side}". '
+            requirement_msg = 'Order side must be either "bid" or "ask". '
+            raise ValueError(error_msg + requirement_msg)
+
 
     def add_ioc_order(self, order: Order):
         """
@@ -165,13 +190,11 @@ class OrderBook:
         order :  The order object.
 
         """
-        # Get the dictionary data
         side = order_dict['side'] 
         price = order_dict['price']
         quantity = order_dict['quantity'] 
         type = order_dict['type']
         
-        # Set the order id
         self.event_num += 1
         id = self.event_num
 
