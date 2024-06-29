@@ -156,7 +156,7 @@ class OrderList:
             return_value = self.last
             self.last = self.last.next_order
             return return_value
-    
+
 class OrderTree:
     """
     An entire side of the order book, composed of all order lists (i.e., 
@@ -309,7 +309,7 @@ class OrderTree:
         self.order_map[order.id] = order
         self.volume += order.quantity
 
-    def del_order(self, id: any) -> None:
+    def del_order(self, id: str) -> None:
         """
         Deletes an order from the order tree, given its order id.
 
