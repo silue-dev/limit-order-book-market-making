@@ -45,7 +45,7 @@ class Order:
         """
         self.quantity = Decimal(new_quantity).quantize(Decimal(self.precision))
     
-    def __str__(self) -> None:
+    def __str__(self) -> str:
         """
         Returns a string representation of the order.
         
