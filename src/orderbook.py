@@ -13,6 +13,9 @@ class OrderBook:
         self.asks = OrderTree('ask')
         self.tape = deque()
         self.event_num = 0
+        self.precision = Decimal('0.1')
+        self.depth = 5
+        self.col_width = 8
     
     def add_order(self, order_dict: dict) -> None:
         """
@@ -205,3 +208,73 @@ class OrderBook:
                       type=type)
 
         return order
+    
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the order book.
+
+        """
+        output = '\n'
+        best_bid = self.get_best_bid()
+        best_ask = self.get_best_ask()
+
+        # Create order book header
+        header_bid_col = 'bid' + ' ' * (self.col_width - 3)
+        header_mid_col = 'price'
+        header_ask_col = ' ' * (self.col_width - 3) + 'ask'
+        header_ruler = '|' + '-' * ((self.col_width * 2) + 15) + '|'
+        output += '|  ' + header_bid_col \
+                + ' | ' + header_mid_col \
+                + ' | ' + header_ask_col \
+                + '  |\n'
+        output += header_ruler + '\n'
+
+        # Set middle (price) of the order book
+        if best_bid and best_ask:
+            mid_price = (best_bid + best_ask) / 2
+            mid_price = mid_price.quantize(Decimal(self.precision))
+
+        elif best_bid and not best_ask:
+            mid_price  = best_bid
+
+        elif best_ask and not best_bid:
+            mid_price  = best_ask
+
+        else:
+            return output
+        
+        # Create order book ask block
+        for i in reversed(range(self.depth)):
+            price = mid_price + self.precision * (i)
+            if price in self.asks.price_map:
+                volume = self.asks.price_map[price].volume
+                bid_col = ' ' * self.col_width
+                mid_col = str(price) + ' ' * (5 - len(str(price)))
+                ask_col = ' ' * (self.col_width - len(str(volume))) + str(volume)
+            else:
+                bid_col = ask_col = ' ' * self.col_width
+                mid_col = ' ' * 5
+            
+            output += '|  ' + bid_col \
+                    + ' | ' + mid_col \
+                    + ' | ' + ask_col \
+                    + '  |\n'
+        
+        # Create order book bid block
+        for i in range(self.depth):
+            price = mid_price - self.precision * (i)
+            if price in self.bids.price_map:
+                volume = self.bids.price_map[price].volume
+                bid_col = str(volume) + ' ' * (self.col_width - len(str(volume)))
+                mid_col = str(price) + ' ' * (5 - len(str(price)))
+                ask_col = ' ' * self.col_width
+            else:
+                bid_col = ask_col = ' ' * self.col_width
+                mid_col = ' ' * 5
+            
+            output += '|  ' + bid_col \
+                    + ' | ' + mid_col \
+                    + ' | ' + ask_col \
+                    + '  |\n'
+
+        return output
