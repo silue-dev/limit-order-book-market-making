@@ -12,7 +12,7 @@ class Order:
     id         :  The id of the order.
     side       :  The side of the order ('bid' or 'ask').
     price      :  The price of the order.
-    quantity   :  The quantity of the order.
+    volume   :  The volume of the order.
     type       :  The type of the order ('market', 'limit', or 'ioc').
 
     """
@@ -20,13 +20,16 @@ class Order:
                  id: str,
                  side: str, 
                  price: float, 
-                 quantity: float, 
+                 volume: float, 
                  type: str) -> None:
         self.id = id
         self.side = side
         self.precision = '0.1'
-        self.price = Decimal(price).quantize(Decimal(self.precision))
-        self.quantity = Decimal(quantity).quantize(Decimal(self.precision))
+        if price:
+            self.price = Decimal(price).quantize(Decimal(self.precision))
+        else:
+            self.price = None
+        self.volume = Decimal(volume).quantize(Decimal(self.precision))
         self.type = type
         self.timestamp = None
         
@@ -34,16 +37,19 @@ class Order:
         self.prev_order = None
         self.order_list = None
 
-    def update_quantity(self, new_quantity: Decimal) -> None:
+    def add_volume(self, amount: Decimal) -> None:
         """
-        Updates the quantity of the order.
+        Adds a volume amount to the order.
 
         Arguments
         ---------
-        new_quantity :  The new quantity to assign to the order.
+        new_volume :  The new volume to assign to the order.
 
         """
-        self.quantity = Decimal(new_quantity).quantize(Decimal(self.precision))
+        amount = Decimal(amount).quantize(Decimal(self.precision))
+        self.volume += amount
+        self.order_list.volume += amount
+        self.order_list.tree.volume += amount
     
     def __str__(self) -> str:
         """
@@ -52,7 +58,7 @@ class Order:
         """
         return '{} {} for {} units @ ${} [id={}, t={}]'.format(self.type,
                                                                self.side,
-                                                               self.quantity,
+                                                               self.volume,
                                                                self.price,
                                                                self.id,
                                                                self.timestamp)
@@ -68,8 +74,9 @@ class OrderList:
     price :  The price level of the order list.
 
     """
-    def __init__(self, side: str, price: Decimal) -> None:
-        self.side = side
+    def __init__(self, tree: 'OrderTree', price: Decimal) -> None:
+        self.tree = tree
+        self.side = tree.side
         self.price = price
         self.head_order = None
         self.tail_order = None
@@ -79,7 +86,7 @@ class OrderList:
 
     def get_head_order(self) -> Order:
         """
-        Returns the head order.
+        Returns the head order of the order list.
 
         """
         return self.head_order
@@ -94,6 +101,7 @@ class OrderList:
 
         """
         order.timestamp = time()
+        order.order_list = self
 
         if self.length == 0:
             order.next_order = None
@@ -107,7 +115,7 @@ class OrderList:
             self.tail_order = order
 
         self.length += 1
-        self.volume += order.quantity
+        self.volume += order.volume
     
     def del_order(self, order: Order) -> None:
         """
@@ -122,7 +130,7 @@ class OrderList:
             return
         else:
             self.length -= 1
-            self.volume -= order.quantity
+            self.volume -= order.volume
             if order.next_order != None and order.prev_order != None:
                 order.next_order.prev_order = order.prev_order
                 order.prev_order.next_order = order.next_order
@@ -174,36 +182,11 @@ class OrderTree:
     def __init__(self, side: str) -> None:
         self.side = side
         self.price_map = SortedDict()  # a sorted dictionary of price levels
-        self.prices = self.price_map.keys()  
+        self.prices = self.price_map.keys()
         self.order_map = {}            # a dictionary of orders by id
         self.depth = 0
         self.volume = 0
         self.num_orders = 0
-    
-    def add_price(self, price: Decimal) -> None:
-        """
-        Adds a new given price level to the order tree.
-
-        Arguments
-        ---------
-        price :  The price level to be added.
-        
-        """
-        new_order_list = OrderList(self.side, price)
-        self.price_map[price] = new_order_list
-        self.depth += 1
-
-    def del_price(self, price: Decimal) -> None:
-        """
-        Deletes a given price level from the order tree.
-
-        Arguments
-        ---------
-        price :  The price level to be deleted.
-        
-        """
-        del self.price_map[price]
-        self.depth -= 1
     
     def price_exists(self, price: Decimal) -> bool:
         """
@@ -220,6 +203,45 @@ class OrderTree:
         """
         return price in self.price_map
     
+    def add_price(self, price: Decimal) -> None:
+        """
+        Adds a new given price level to the order tree.
+
+        Arguments
+        ---------
+        price :  The price level to be added.
+        
+        """
+        new_order_list = OrderList(self, price)
+        self.price_map[price] = new_order_list
+        self.depth += 1
+
+    def del_price(self, price: Decimal) -> None:
+        """
+        Deletes a given price level from the order tree if it exists.
+
+        Arguments
+        ---------
+        price :  The price level to be deleted.
+        
+        """
+        if self.price_exists(price):
+            del self.price_map[price]
+            self.depth -= 1
+    
+    def get_best_price(self) -> Decimal | None:
+        """"
+        Returns the best price in the order tree. For a tree 
+        of side 'bid', this is the highest price. For a tree 
+        of side 'ask', this is the lowest price.
+
+        """
+        if self.depth > 0:
+            if self.side == 'bid':
+                return self.prices[-1]
+            elif self.side == 'ask':
+                return self.prices[0]
+        
     def order_exists(self, order: Order) -> bool:
         """
         Checks if a given order exists in the order tree.
@@ -234,30 +256,12 @@ class OrderTree:
         
         """
         return order in self.order_map
-
-    def get_min_price(self) -> Decimal | None:
-        """"
-        Returns the lowest price in the order tree.
-
-        """
-        if self.depth > 0:
-            return self.prices[0]
-        else:
-            return None
-        
-    def get_max_price(self) -> Decimal | None:
-        """"
-        Returns the highest price in the order tree.
-
-        """
-        if self.depth > 0:
-            return self.prices[-1]
-        else:
-            return None
         
     def get_order_list(self, price: Decimal) -> OrderList:
         """
         Returns the order list associated with the given price level.
+        For a tree of side 'bid', this is the order list at the highest price. 
+        For a tree of side 'ask', this is the order list at the lowest price.
 
         Arguments
         ---------
@@ -268,27 +272,16 @@ class OrderTree:
         The associated order list.
 
         """
-        return self.price_map[price]
-
-    def get_max_price_order_list(self) -> OrderList:
+        if self.price_exists(price):
+            return self.price_map[price]
+    
+    def get_best_priced_order_list(self) -> OrderList:
         """
-        Returns the order list associated with the highest price level.
-
-        """
-        if self.depth > 0:
-            return self.get_order_list(self.get_max_price())
-        else:
-            return None
-
-    def get_min_price_order_list(self) -> OrderList:
-        """
-        Returns the order list associated with the lowest price level.
+        Returns the order list associated with the best price level.
 
         """
         if self.depth > 0:
-            return self.get_order_list(self.get_min_price())
-        else:
-            return None
+            return self.get_order_list(self.get_best_price())
     
     def add_order(self, order: Order) -> None:
         """
@@ -303,11 +296,11 @@ class OrderTree:
         if self.order_exists(order.id):
             self.del_order(order.id)
         self.num_orders += 1
-        if order.price not in self.price_map:
+        if not self.price_exists(order.price):
             self.add_price(order.price)
         self.price_map[order.price].add_order(order)
         self.order_map[order.id] = order
-        self.volume += order.quantity
+        self.volume += order.volume
 
     def del_order(self, id: str) -> None:
         """
@@ -319,11 +312,49 @@ class OrderTree:
         
         """
         order = self.order_map[id]
-        order.order_list.remove_order(order)
+        order.order_list.del_order(order)
 
-        if len(order.order_list) == 0:
+        if order.order_list.length == 0:
             self.del_price(order.price)
         del self.order_map[id]
 
         self.num_orders -= 1
-        self.volume -= order.quantity
+        self.volume -= order.volume
+
+    def get_head_order(self) -> Order:
+        """
+        Returns the head order of the order tree.
+
+        """
+        if self.volume > 0:
+            return self.price_map[self.get_best_price()].get_head_order()
+    
+    def match_order(self, 
+                    order: Order) -> tuple[Order, Decimal, Decimal]:
+        """
+        Matches the given order on the order tree, executing a trade.
+
+        Arguments
+        ---------
+        order :  The order to trade.
+
+        Returns
+        -------
+        updated_order :  The order, with updated volume.
+        trade_price   :  The price at which the trade occurred.
+        trade_volume  :  The volume that has been traded.
+
+        """
+        if self.volume > 0:
+            head_order = self.get_head_order()
+
+            trade_price = head_order.price
+            trade_volume = min(order.volume, head_order.volume)
+
+            order.volume -= trade_volume
+            head_order.add_volume(-trade_volume)
+
+            if head_order.order_list.volume <= 0.0:
+                self.del_price(head_order.order_list.price)
+
+            return order, trade_price, trade_volume
