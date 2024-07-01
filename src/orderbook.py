@@ -1,7 +1,7 @@
 from time import time
 from decimal import Decimal
 from collections import deque
-from orders import Order, OrderList, OrderTree
+from orders import Order, OrderTree
 
 class OrderBook:
     """
@@ -37,6 +37,8 @@ class OrderBook:
             self.add_limit_order(order)
         elif order.type == 'ioc':
             self.add_ioc_order(order)
+
+        return order.id
     
     def add_market_order(self, order: Order):
         """
@@ -127,8 +129,22 @@ class OrderBook:
         """
         pass
 
-    def del_order():
-        pass
+    def del_order(self, id: str) -> bool:
+        """
+        Deletes an order from the order book, given its order id.
+
+        Arguments
+        ---------
+        id :  The id of the order to be deleted.
+
+        Returns
+        -------
+        Whether or not the deletion took place.
+
+        """
+        bid_deletion = self.bids.del_order(id)
+        ask_deletion = self.asks.del_order(id)
+        return True if bid_deletion or ask_deletion else False
 
     def get_best_bid(self):
         """

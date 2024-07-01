@@ -295,6 +295,7 @@ class OrderTree:
         """
         if self.order_exists(order.id):
             self.del_order(order.id)
+
         self.num_orders += 1
         if not self.price_exists(order.price):
             self.add_price(order.price)
@@ -302,24 +303,32 @@ class OrderTree:
         self.order_map[order.id] = order
         self.volume += order.volume
 
-    def del_order(self, id: str) -> None:
+    def del_order(self, id: str) -> bool:
         """
         Deletes an order from the order tree, given its order id.
 
         Arguments
         ---------
         id :  The id of the order to be deleted.
+
+        Returns
+        -------
+        Whether or not the deletion took place.
         
         """
-        order = self.order_map[id]
-        order.order_list.del_order(order)
+        if id in self.order_map:
+            order = self.order_map[id]
+            order.order_list.del_order(order)
 
-        if order.order_list.length == 0:
-            self.del_price(order.price)
-        del self.order_map[id]
+            if order.order_list.length == 0:
+                self.del_price(order.price)
+            del self.order_map[id]
 
-        self.num_orders -= 1
-        self.volume -= order.volume
+            self.num_orders -= 1
+            self.volume -= order.volume
+            return True
+        else:
+            return False
 
     def get_head_order(self) -> Order:
         """
@@ -354,7 +363,7 @@ class OrderTree:
             order.volume -= trade_volume
             head_order.add_volume(-trade_volume)
 
-            if head_order.order_list.volume <= 0.0:
-                self.del_price(head_order.order_list.price)
+            if head_order.volume <= 0:
+                self.del_order(head_order.id)
 
             return order, trade_price, trade_volume
