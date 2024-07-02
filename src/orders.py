@@ -9,11 +9,11 @@ class Order:
 
     Arguments
     ---------
-    id         :  The id of the order.
-    side       :  The side of the order ('bid' or 'ask').
-    price      :  The price of the order.
-    volume   :  The volume of the order.
-    type       :  The type of the order ('market', 'limit', or 'ioc').
+    id     :  The id of the order.
+    side   :  The side of the order ('bid' or 'ask').
+    price  :  The price of the order.
+    volume :  The volume of the order.
+    type   :  The type of the order ('market', 'limit', or 'ioc').
 
     """
     def __init__(self, 

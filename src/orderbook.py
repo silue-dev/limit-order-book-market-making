@@ -15,6 +15,13 @@ class OrderBook:
         self.event_num = 0
         self.precision = Decimal('0.1')
     
+    def reset(self) -> None:
+        """
+        Resets the order book.
+
+        """
+        self.__init__()
+    
     def add_order(self, order_dict: dict) -> None:
         """
         Adds an order to the order book.
@@ -160,6 +167,19 @@ class OrderBook:
         """
         return self.asks.get_best_price()
     
+    def get_mid_price(self) -> Decimal:
+        """
+        Returns the mid price.
+
+        """
+        best_bid = self.get_best_bid()
+        best_ask = self.get_best_ask()
+        if best_bid and best_ask:
+            mid_price = (best_bid + best_ask) / 2
+        else:
+            mid_price = None
+        return mid_price
+    
     def to_order_object(self, order_dict: dict) -> Order:
         """
         Converts an order in dictionary form into an Order object.
@@ -186,7 +206,7 @@ class OrderBook:
         
         side = order_dict['side'] 
         price = order_dict['price']
-        volume = order_dict['volume'] 
+        volume = max(0, order_dict['volume'])
         type = order_dict['type']
         
         self.event_num += 1
