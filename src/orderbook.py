@@ -245,12 +245,12 @@ class OrderBook:
         Returns a string representation of the order book.
 
         """
-        # Setup output string and get best prices
+        # Setup the output string and get best prices
         output = '\n'
         best_bid = self.get_best_bid()
         best_ask = self.get_best_ask()
 
-        # Create order book header
+        # Create the order book header
         header_bid_col = 'bid' + ' ' * (col_width - 3)
         header_mid_col = 'price'
         header_ask_col = ' ' * (col_width - 3) + 'ask'
@@ -261,7 +261,7 @@ class OrderBook:
                 + '  |\n'
         output += header_ruler + '\n'
 
-        # Set middle (price) of the order book
+        # Set the middle (price) of the order book
         if best_bid and best_ask:
             mid_price = (best_bid + best_ask) / 2
             mid_price = mid_price.quantize(Decimal(self.tick_size))
@@ -272,7 +272,7 @@ class OrderBook:
         elif best_ask and not best_bid:
             mid_price = best_ask
 
-        # Return an empty order book if there are no orders
+        # Return an empty order book string if there are no orders
         else:
             return output
         
@@ -293,7 +293,7 @@ class OrderBook:
                     + ' | ' + ask_col \
                     + '  |\n'
         
-        # Create order book mid price level
+        # Create the order book mid price level
         price = mid_price
         if price in self.bids.price_map:
             volume = self.bids.price_map[price].volume
@@ -314,7 +314,7 @@ class OrderBook:
                 + ' | ' + ask_col \
                 + '  |\n'
         
-        # Create order book bid block
+        # Create the order book bid block
         for i in range(1, depth + 1):
             price = mid_price - self.tick_size * (i)
             if price in self.bids.price_map:
