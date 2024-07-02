@@ -13,7 +13,7 @@ class Order:
     side   :  The side of the order ('bid' or 'ask').
     price  :  The price of the order.
     volume :  The volume of the order.
-    type   :  The type of the order ('market', 'limit', or 'ioc').
+    kind   :  The kind of the order ('market', 'limit', or 'ioc').
 
     """
     def __init__(self, 
@@ -21,7 +21,7 @@ class Order:
                  side: str, 
                  price: float, 
                  volume: float, 
-                 type: str) -> None:
+                 kind: str) -> None:
         self.id = id
         self.side = side
         self.tick_size = '0.1'
@@ -30,7 +30,7 @@ class Order:
         else:
             self.price = None
         self.volume = Decimal(volume).quantize(Decimal(self.tick_size))
-        self.type = type
+        self.kind = kind
         self.timestamp = None
         
         self.next_order = None
@@ -56,7 +56,7 @@ class Order:
         Returns a string representation of the order.
         
         """
-        return '{} {} for {} units @ ${} [id={}, t={}]'.format(self.type,
+        return '{} {} for {} units @ ${} [id={}, t={}]'.format(self.kind,
                                                                self.side,
                                                                self.volume,
                                                                self.price,

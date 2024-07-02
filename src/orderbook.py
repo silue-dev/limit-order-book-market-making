@@ -33,18 +33,18 @@ class OrderBook:
                       * 'side' (str) : The side of the order (i.e., 'bid' or 'ask').
                       * 'price' (Decimal) : The price at which to place the order.
                       * 'volume' (Decimal) : The volume of the order.
-                      * 'type' : The type of order (i.e., 'market', 'limit', or 'ioc').
+                      * 'kind' (str) : The kind of order (i.e., 'market', 'limit', or 'ioc').
 
         """
         order = self.to_order_object(order_dict)
 
-        if order.type == 'market':
+        if order.kind == 'market':
             self.add_market_order(order)
 
-        elif order.type == 'limit':
+        elif order.kind == 'limit':
             self.add_limit_order(order)
 
-        elif order.type == 'ioc':
+        elif order.kind == 'ioc':
             self.add_ioc_order(order)
 
         return order.id
@@ -200,7 +200,7 @@ class OrderBook:
                       * 'side' (str) : The side of the order (i.e., 'bid' or 'ask').
                       * 'price' (float) : The price at which to place the order.
                       * 'volume' (float) : The volume of the order.
-                      * 'type' (str) : The type of order (i.e., 'market', 'limit', or 'ioc').
+                      * 'kind' (str) : The kind of order (i.e., 'market', 'limit', or 'ioc').
 
         Returns
         -------
@@ -208,10 +208,10 @@ class OrderBook:
 
         """
         # Check if the dictionary keys are valid
-        required_keys = ['side', 'price', 'volume', 'type']
+        required_keys = ['side', 'price', 'volume', 'kind']
         if not all(key in order_dict for key in required_keys):
             error_msg = 'Order dictinoary must contain the following keys: '
-            error_msg += '"side", "price", "volume", and "type". '
+            error_msg += '"side", "price", "volume", and "kind". '
             raise KeyError(error_msg)
         
         # Check if the side is valid
@@ -224,7 +224,7 @@ class OrderBook:
         # Get the order details
         price = order_dict['price']
         volume = max(0, order_dict['volume'])
-        type = order_dict['type']
+        kind = order_dict['kind']
         
         self.event_num += 1
         id = self.event_num
@@ -234,7 +234,7 @@ class OrderBook:
                       side=side,
                       price=price,
                       volume=volume,
-                      type=type)
+                      kind=kind)
 
         return order
     
