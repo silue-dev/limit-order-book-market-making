@@ -13,7 +13,7 @@ class OrderBook:
         self.asks = OrderTree('ask')
         self.tape = deque()
         self.event_num = 0
-        self.precision = Decimal('0.1')
+        self.tick_size = Decimal('0.1')
     
     def reset(self) -> None:
         """
@@ -40,14 +40,16 @@ class OrderBook:
 
         if order.type == 'market':
             self.add_market_order(order)
+
         elif order.type == 'limit':
             self.add_limit_order(order)
+
         elif order.type == 'ioc':
             self.add_ioc_order(order)
 
         return order.id
     
-    def add_market_order(self, order: Order):
+    def add_market_order(self, order: Order) -> None:
         """
         Adds a makert order to the order book.
 
@@ -65,15 +67,15 @@ class OrderBook:
             while order.volume > 0 and self.bids.volume > 0:
                 order, traded_price, traded_volume = self.bids.match_order(order)
                 self.add_trade_to_tape(traded_price, traded_volume)
-
-        else:
-            error_msg = f'Invalid order side "{order.side}". '
-            requirement_msg = 'Order side must be either "bid" or "ask". '
-            raise ValueError(error_msg + requirement_msg)
     
-    def add_limit_order(self, order: Order):
+    def add_limit_order(self, order: Order) -> None:
         """
         Adds a limit order to the order book.
+
+        Note that if the order is so aggressive that it can be matched 
+        immediately, we fill the order until either the order price is 
+        reached or the entire order volume has been filled. Any remaining 
+        order volume is added as liquidity to the limit order book.
 
         Arguments
         ---------
@@ -98,11 +100,29 @@ class OrderBook:
                 self.add_trade_to_tape(traded_price, traded_volume)
             if order.volume > 0:
                 self.asks.add_order(order)
-                    
-        else:
-            error_msg = f'Invalid order side "{order.side}". '
-            requirement_msg = 'Order side must be either "bid" or "ask". '
-            raise ValueError(error_msg + requirement_msg)
+    
+    def add_ioc_order(self, order: Order) -> None:
+        """
+        Adds an IOC order to the order book.
+
+        Arguments
+        ---------
+        order :  The IOC order to be added.
+
+        """
+        if order.side == 'bid':
+            while self.asks.volume > 0 \
+                  and order.volume > 0 \
+                  and order.price >= self.asks.get_best_price():
+                order, traded_price, traded_volume = self.asks.match_order(order)
+                self.add_trade_to_tape(traded_price, traded_volume)
+        
+        elif order.side == 'ask':
+            while self.bids.volume > 0 \
+                  and order.volume > 0 \
+                  and order.price <= self.bids.get_best_price():
+                order, traded_price, traded_volume = self.bids.match_order(order)
+                self.add_trade_to_tape(traded_price, traded_volume)
     
     def add_trade_to_tape(self,
                           price: Decimal, 
@@ -125,17 +145,6 @@ class OrderBook:
         }
         self.tape.append(trade)
 
-    def add_ioc_order(self, order: Order):
-        """
-        Adds an IOC order to the order book.
-
-        Arguments
-        ---------
-        order :  The IOC order to be added.
-
-        """
-        pass
-
     def del_order(self, id: str) -> bool:
         """
         Deletes an order from the order book, given its order id.
@@ -153,7 +162,7 @@ class OrderBook:
         ask_deletion = self.asks.del_order(id)
         return True if bid_deletion or ask_deletion else False
 
-    def get_best_bid(self):
+    def get_best_bid(self) -> Decimal:
         """
         Returns the best bid price.
         
@@ -198,13 +207,21 @@ class OrderBook:
         order :  The order object.
 
         """
+        # Check if the dictionary keys are valid
         required_keys = ['side', 'price', 'volume', 'type']
         if not all(key in order_dict for key in required_keys):
             error_msg = 'Order dictinoary must contain the following keys: '
             error_msg += '"side", "price", "volume", and "type". '
             raise KeyError(error_msg)
         
+        # Check if the side is valid
         side = order_dict['side'] 
+        if side not in ['bid', 'ask']:
+            error_msg = f'Invalid order side "{order.side}". '
+            requirement_msg = 'Order side must be either "bid" or "ask". '
+            raise ValueError(error_msg + requirement_msg)
+        
+        # Get the order details
         price = order_dict['price']
         volume = max(0, order_dict['volume'])
         type = order_dict['type']
@@ -212,6 +229,7 @@ class OrderBook:
         self.event_num += 1
         id = self.event_num
 
+        # Create the order object
         order = Order(id=id,
                       side=side,
                       price=price,
@@ -227,7 +245,7 @@ class OrderBook:
         Returns a string representation of the order book.
 
         """
-        # Setup 
+        # Setup output string and get best prices
         output = '\n'
         best_bid = self.get_best_bid()
         best_ask = self.get_best_ask()
@@ -246,7 +264,7 @@ class OrderBook:
         # Set middle (price) of the order book
         if best_bid and best_ask:
             mid_price = (best_bid + best_ask) / 2
-            mid_price = mid_price.quantize(Decimal(self.precision))
+            mid_price = mid_price.quantize(Decimal(self.tick_size))
 
         elif best_bid and not best_ask:
             mid_price = best_bid
@@ -254,12 +272,13 @@ class OrderBook:
         elif best_ask and not best_bid:
             mid_price = best_ask
 
+        # Return an empty order book if there are no orders
         else:
             return output
         
-        # Create order book ask block
+        # Create the order book ask block
         for i in reversed(range(1, depth)):
-            price = mid_price + self.precision * (i)
+            price = mid_price + self.tick_size * (i)
             if price in self.asks.price_map:
                 volume = self.asks.price_map[price].volume
                 bid_col = ' ' * col_width
@@ -297,7 +316,7 @@ class OrderBook:
         
         # Create order book bid block
         for i in range(1, depth + 1):
-            price = mid_price - self.precision * (i)
+            price = mid_price - self.tick_size * (i)
             if price in self.bids.price_map:
                 volume = self.bids.price_map[price].volume
                 bid_col = str(volume) + ' ' * (col_width - len(str(volume)))

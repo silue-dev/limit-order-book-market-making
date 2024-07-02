@@ -24,12 +24,12 @@ class Order:
                  type: str) -> None:
         self.id = id
         self.side = side
-        self.precision = '0.1'
+        self.tick_size = '0.1'
         if price:
-            self.price = Decimal(price).quantize(Decimal(self.precision))
+            self.price = Decimal(price).quantize(Decimal(self.tick_size))
         else:
             self.price = None
-        self.volume = Decimal(volume).quantize(Decimal(self.precision))
+        self.volume = Decimal(volume).quantize(Decimal(self.tick_size))
         self.type = type
         self.timestamp = None
         
@@ -46,7 +46,7 @@ class Order:
         new_volume :  The new volume to assign to the order.
 
         """
-        amount = Decimal(amount).quantize(Decimal(self.precision))
+        amount = Decimal(amount).quantize(Decimal(self.tick_size))
         self.volume += amount
         self.order_list.volume += amount
         self.order_list.tree.volume += amount
