@@ -198,9 +198,9 @@ class OrderBook:
         order_dict :  The order in dictionary form. The dictionary should contain 
                       the following keys:
                       * 'side' (str) : The side of the order (i.e., 'bid' or 'ask').
-                      * 'price' (Decimal) : The price at which to place the order.
-                      * 'volume' (Decimal) : The volume (i.e., volume) of the order.
-                      * 'type' : The type of order (i.e., 'market', 'limit', or 'ioc').
+                      * 'price' (float) : The price at which to place the order.
+                      * 'volume' (float) : The volume of the order.
+                      * 'type' (str) : The type of order (i.e., 'market', 'limit', or 'ioc').
 
         Returns
         -------
