@@ -135,8 +135,17 @@ class MarketSimulator:
         self.ask_id_history += ask_ids
         self.mid_prices.append(self.ob.get_mid_price())
         
+        # Setup the interactive plot
+        plt.ion()
+        _, ax = plt.subplots()
+        line, = ax.plot(self.mid_prices)
+        ax.set_xlabel('Time Steps', fontweight='bold')
+        ax.set_ylabel('Mid Price', fontweight='bold')
+        ax.set_title('Mid Price over Time', fontweight='bold')
+        plt.show()
+
         # Simulate market trading
-        for _ in range(steps):
+        for step in range(steps):
             # Add a market order and compute the (new) mid price
             self.add_random_market_order(bid_prob=bid_prob)
             mid_price = self.ob.get_mid_price()
@@ -153,21 +162,17 @@ class MarketSimulator:
             # Delete old orders
             self.del_old_orders()
 
+            # Update the plot
+            line.set_data(range(len(self.mid_prices)), self.mid_prices)
+            ax.relim()
+            ax.autoscale_view()
+            plt.pause(0.01)
+
+            # Print the order book
             print(self.ob)
         
-        self.plot_mid_prices()
-
-    def plot_mid_prices(self) -> None:
-        """
-        Plots the mid prices collected during the simulation.
-
-        """
-        plt.plot(self.mid_prices)
-        plt.xlabel('Time Steps', fontweight='bold')
-        plt.ylabel('Mid Price', fontweight='bold')
-        plt.title('Mid Price over Time', fontweight='bold')
+        plt.ioff()
         plt.show()
-
 
 if __name__ == '__main__':
     ob = OrderBook()
