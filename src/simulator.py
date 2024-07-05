@@ -139,13 +139,14 @@ class MarketSimulator:
         plt.ion()
         _, ax = plt.subplots()
         line, = ax.plot(self.mid_prices)
-        ax.set_xlabel('Time Steps', fontweight='bold')
-        ax.set_ylabel('Mid Price', fontweight='bold')
-        ax.set_title('Mid Price over Time', fontweight='bold')
+        ax.set_xlabel('Time', fontweight='bold')
+        ax.set_ylabel('Price', fontweight='bold')
+        ax.set_title('Price over Time', fontweight='bold')
         plt.show()
 
         # Simulate market trading
-        for step in range(steps):
+        step = 0
+        while steps is None or step < steps:
             # Add a market order and compute the (new) mid price
             self.add_random_market_order(bid_prob=bid_prob)
             mid_price = self.ob.get_mid_price()
@@ -177,4 +178,4 @@ class MarketSimulator:
 if __name__ == '__main__':
     ob = OrderBook()
     sim = MarketSimulator(ob)
-    sim.run(steps=10_000, bid_prob=0.5)
+    sim.run(steps=None, bid_prob=0.5)
