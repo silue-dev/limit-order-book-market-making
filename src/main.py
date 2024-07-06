@@ -14,7 +14,7 @@ class MarketSimulator:
     Arguments
     ---------
     ob              :  The order book to simulate the market on.
-    max_tree_volume :  The approximate maximum volume allowed on each side of the order book.
+    max_tree_volume :  The approximate maximum volume of an order tree.
     
     """
     def __init__(self, 
