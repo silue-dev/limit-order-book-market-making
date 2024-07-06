@@ -14,6 +14,7 @@ class Order:
     price  :  The price of the order.
     volume :  The volume of the order.
     kind   :  The kind of the order ('market', 'limit', or 'ioc').
+    user   :  The name of the user who created the order.
 
     """
     def __init__(self, 
@@ -21,7 +22,8 @@ class Order:
                  side: str, 
                  price: float, 
                  volume: float, 
-                 kind: str) -> None:
+                 kind: str,
+                 user: str) -> None:
         self.id = id
         self.side = side
         self.tick_size = '0.1'
@@ -31,6 +33,7 @@ class Order:
             self.price = None
         self.volume = Decimal(volume).quantize(Decimal(self.tick_size))
         self.kind = kind
+        self.user = user
         self.timestamp = None
         
         self.next_order = None
@@ -345,11 +348,12 @@ class OrderTree:
 
         Arguments
         ---------
-        order :  The order to trade.
+        order :  The (incoming) order to trade.
 
         Returns
         -------
-        updated_order :  The order, with updated volume.
+        order         :  The order, with updated volume.
+        head_order    :  The head limit order being matched in the order book.
         trade_price   :  The price at which the trade occurred.
         trade_volume  :  The volume that has been traded.
 
@@ -366,4 +370,4 @@ class OrderTree:
             if head_order.volume <= 0:
                 self.del_order(head_order.id)
 
-            return order, trade_price, trade_volume
+            return order, head_order, trade_price, trade_volume

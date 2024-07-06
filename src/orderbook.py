@@ -2,18 +2,30 @@ from time import time
 from decimal import Decimal
 from collections import deque
 from orders import Order, OrderTree
+from collections import defaultdict
 
 class OrderBook:
     """
     The order book.
+
+    Arguments
+    ---------
+    max_order_volume :  The maximum volume of a single order.
     
     """
-    def __init__(self) -> None:
+    def __init__(self, max_order_volume: float = 100.0) -> None:
+        self.max_order_volume = max_order_volume
         self.bids = OrderTree('bid')
         self.asks = OrderTree('ask')
         self.tape = deque()
         self.event_num = 0
         self.tick_size = Decimal('0.1')
+
+        self.user_trades = defaultdict(list)
+        self.user_positions = defaultdict(lambda: Decimal(0))
+        self.user_pnls = defaultdict(lambda: [Decimal(0)])
+
+        self.mid_prices = []
     
     def reset(self) -> None:
         """
@@ -34,6 +46,7 @@ class OrderBook:
                       * 'price' (Decimal) : The price at which to place the order.
                       * 'volume' (Decimal) : The volume of the order.
                       * 'kind' (str) : The kind of order (i.e., 'market', 'limit', or 'ioc').
+                      * 'user' (str) : The name of the user who created the order.
 
         """
         order = self.to_order_object(order_dict)
@@ -60,13 +73,13 @@ class OrderBook:
         """
         if order.side == 'bid':
             while order.volume > 0 and self.asks.volume > 0:
-                order, traded_price, traded_volume = self.asks.match_order(order)
-                self.add_trade_to_tape(traded_price, traded_volume)
+                order, head_order, traded_price, traded_volume = self.asks.match_order(order)
+                self.add_trade_to_tape(order, head_order, traded_price, traded_volume)
 
         elif order.side == 'ask':
             while order.volume > 0 and self.bids.volume > 0:
-                order, traded_price, traded_volume = self.bids.match_order(order)
-                self.add_trade_to_tape(traded_price, traded_volume)
+                order, head_order, traded_price, traded_volume = self.bids.match_order(order)
+                self.add_trade_to_tape(order, head_order, traded_price, traded_volume)
     
     def add_limit_order(self, order: Order) -> None:
         """
@@ -87,8 +100,8 @@ class OrderBook:
             while self.asks.volume > 0 \
                   and order.volume > 0 \
                   and order.price >= self.asks.get_best_price():
-                order, traded_price, traded_volume = self.asks.match_order(order)
-                self.add_trade_to_tape(traded_price, traded_volume)
+                order, head_order, traded_price, traded_volume = self.asks.match_order(order)
+                self.add_trade_to_tape(order, head_order, traded_price, traded_volume)
             if order.volume > 0:
                 self.bids.add_order(order)
         
@@ -96,8 +109,8 @@ class OrderBook:
             while self.bids.volume > 0 \
                   and order.volume > 0 \
                   and order.price <= self.bids.get_best_price():
-                order, traded_price, traded_volume = self.bids.match_order(order)
-                self.add_trade_to_tape(traded_price, traded_volume)
+                order, head_order, traded_price, traded_volume = self.bids.match_order(order)
+                self.add_trade_to_tape(order, head_order, traded_price, traded_volume)
             if order.volume > 0:
                 self.asks.add_order(order)
     
@@ -114,36 +127,74 @@ class OrderBook:
             while self.asks.volume > 0 \
                   and order.volume > 0 \
                   and order.price >= self.asks.get_best_price():
-                order, traded_price, traded_volume = self.asks.match_order(order)
-                self.add_trade_to_tape(traded_price, traded_volume)
+                order, head_order, traded_price, traded_volume = self.asks.match_order(order)
+                self.add_trade_to_tape(order, head_order, traded_price, traded_volume)
         
         elif order.side == 'ask':
             while self.bids.volume > 0 \
                   and order.volume > 0 \
                   and order.price <= self.bids.get_best_price():
-                order, traded_price, traded_volume = self.bids.match_order(order)
-                self.add_trade_to_tape(traded_price, traded_volume)
+                order, head_order, traded_price, traded_volume = self.bids.match_order(order)
+                self.add_trade_to_tape(order, head_order, traded_price, traded_volume)
     
     def add_trade_to_tape(self,
+                          order: Order,
+                          head_order: Order,
                           price: Decimal, 
                           volume_traded: Decimal) -> None:
         """
         Adds a trade to the tape given the trade details.
+        Also updates the user's trades and position.
         
         Arguments
         ---------
+        order         :  The incoming order being traded.
+        head_order    :  The head order being matched in the order book.
         price         :  The price at which the trade occurs.
         volume_traded :  The volume (i.e., volume) traded.
         
         """
         self.event_num += 1
-        trade = {
+        order_trade = {
             'id': self.event_num,
+            'side': order.side,
             'price': price,
             'volume': volume_traded,
-            'time': time()
+            'time': time(),
+            'taker': order.user,
+            'maker': head_order.user
         }
-        self.tape.append(trade)
+        head_order_trade = {
+            'id': self.event_num,
+            'side': head_order.side,
+            'price': price,
+            'volume': volume_traded,
+            'time': time(),
+            'taker': order.user,
+            'maker': head_order.user
+        }
+
+        # Update the tape
+        self.tape.append(order_trade)
+
+        # Update the user's trades so far
+        if order.user != None: self.user_trades[order.user].append(order_trade)
+        if head_order.user != None: self.user_trades[head_order.user].append(head_order_trade)
+
+        # Update the user's positions
+        if order.side == 'bid':
+            if order.user != None: self.user_positions[order.user] += volume_traded
+            if head_order.user != None: self.user_positions[head_order.user] -= volume_traded
+        elif order.side == 'ask':
+            if order.user != None: self.user_positions[order.user] -= volume_traded
+            if head_order.user != None: self.user_positions[head_order.user] += volume_traded
+        
+        # Update the user's pnls
+        for user in self.user_positions.keys():
+            self.user_pnls[user].append(self.get_pnl(user))
+
+        # Update mid prices
+        self.mid_prices.append(self.get_mid_price())
 
     def del_order(self, id: str) -> bool:
         """
@@ -199,8 +250,9 @@ class OrderBook:
                       the following keys:
                       * 'side' (str) : The side of the order (i.e., 'bid' or 'ask').
                       * 'price' (float) : The price at which to place the order.
-                      * 'volume' (float) : The volume of the order.
+                      * 'volume' (float) : The volume of the order (limited to 100).
                       * 'kind' (str) : The kind of order (i.e., 'market', 'limit', or 'ioc').
+                      * 'user' (str) : The name of the user who created the order.
 
         Returns
         -------
@@ -208,10 +260,10 @@ class OrderBook:
 
         """
         # Check if the dictionary keys are valid
-        required_keys = ['side', 'price', 'volume', 'kind']
+        required_keys = ['side', 'price', 'volume', 'kind', 'user']
         if not all(key in order_dict for key in required_keys):
             error_msg = 'Order dictinoary must contain the following keys: '
-            error_msg += '"side", "price", "volume", and "kind". '
+            error_msg += '"side", "price", "volume", "kind", and "user". '
             raise KeyError(error_msg)
         
         # Check if the side is valid
@@ -223,8 +275,10 @@ class OrderBook:
         
         # Get the order details
         price = order_dict['price']
-        volume = max(0, order_dict['volume'])
+        volume = max(0, Decimal(order_dict['volume']))
+        volume = min(volume, Decimal(self.max_order_volume))
         kind = order_dict['kind']
+        user = order_dict['user']
         
         self.event_num += 1
         id = self.event_num
@@ -234,101 +288,79 @@ class OrderBook:
                       side=side,
                       price=price,
                       volume=volume,
-                      kind=kind)
+                      kind=kind,
+                      user=user)
 
         return order
     
-    def __str__(self, 
-                depth: int = 10, 
-                col_width: int = 8) -> str:
+    def get_pnl(self, user: str) -> Decimal:
         """
-        Returns a string representation of the order book.
+        Returns the PnL of a given user. The PnL is calculated
+        as a sum of the realized PnL and the unrealized PnL.
+
+        Arguments
+        ---------
+        user :  The user.
+
+        Returns
+        -------
+        The current PnL of the user.
 
         """
-        # Setup the output string and get best prices
-        output = '\n'
+        unrealized_pnl = self.user_positions[user] * self.get_mid_price()
+
+        trades = self.user_trades[user]
+        realized_pnl = Decimal(0)
+        for trade in trades:
+            price = Decimal(trade['price'])
+            volume = Decimal(trade['volume'])
+            if trade['side'] == 'bid':
+                realized_pnl -= volume * price
+            elif trade['side'] == 'ask':
+                realized_pnl += volume * price
+
+        return unrealized_pnl + realized_pnl
+    
+    def get_visualization_data(self, depth: int = 10) -> dict:
+        """
+        Returns the order book data for visualization.
+
+        Arguments
+        ---------
+        depth  :  The depth of the order book to return.
+
+        Returns
+        -------
+        A dictionary with bid and ask prices, and their cumulative volumes.
+
+        """
         best_bid = self.get_best_bid()
         best_ask = self.get_best_ask()
+        mid_price = Decimal(0)
 
-        # Create the order book header
-        header_bid_col = 'bid' + ' ' * (col_width - 3)
-        header_mid_col = 'price'
-        header_ask_col = ' ' * (col_width - 3) + 'ask'
-        header_ruler = '|' + '-' * ((col_width * 2) + 15) + '|'
-        output += '|  ' + header_bid_col \
-                + ' | ' + header_mid_col \
-                + ' | ' + header_ask_col \
-                + '  |\n'
-        output += header_ruler + '\n'
-
-        # Set the middle (price) of the order book
         if best_bid and best_ask:
             mid_price = (best_bid + best_ask) / 2
             mid_price = mid_price.quantize(Decimal(self.tick_size))
-
-        elif best_bid and not best_ask:
+        elif best_bid:
             mid_price = best_bid
-
-        elif best_ask and not best_bid:
+        elif best_ask:
             mid_price = best_ask
 
-        # Return an empty order book string if there are no orders
-        else:
-            return output
-        
-        # Create the order book ask block
-        for i in reversed(range(1, depth)):
-            price = mid_price + self.tick_size * (i)
-            if price in self.asks.price_map:
-                volume = self.asks.price_map[price].volume
-                bid_col = ' ' * col_width
-                mid_col = str(price) + ' ' * (5 - len(str(price)))
-                ask_col = ' ' * (col_width - len(str(volume))) + str(volume)
-            else:
-                bid_col = ask_col = ' ' * col_width
-                mid_col = str(price) + ' ' * (5 - len(str(price)))
+        bids = []
+        asks = []
+        cumulative_bid_volume = 0
+        cumulative_ask_volume = 0
 
-            output += '|  ' + bid_col \
-                    + ' | ' + mid_col \
-                    + ' | ' + ask_col \
-                    + '  |\n'
-        
-        # Create the order book mid price level
-        price = mid_price
-        if price in self.bids.price_map:
-            volume = self.bids.price_map[price].volume
-            bid_col = str(volume) + ' ' * (col_width - len(str(volume)))
-            mid_col = str(price) + ' ' * (5 - len(str(price)))
-            ask_col = ' ' * col_width
-        elif price in self.asks.price_map:
-            volume = self.asks.price_map[price].volume
-            bid_col = ' ' * col_width
-            mid_col = str(price) + ' ' * (5 - len(str(price)))
-            ask_col = ' ' * (col_width - len(str(volume))) + str(volume)
-        else:
-            bid_col = ask_col = ' ' * col_width
-            mid_col = str(price) + ' ' * (5 - len(str(price)))
-        
-        output += '|  ' + bid_col \
-                + ' | ' + mid_col \
-                + ' | ' + ask_col \
-                + '  |\n'
-        
-        # Create the order book bid block
         for i in range(1, depth + 1):
-            price = mid_price - self.tick_size * (i)
-            if price in self.bids.price_map:
-                volume = self.bids.price_map[price].volume
-                bid_col = str(volume) + ' ' * (col_width - len(str(volume)))
-                mid_col = str(price) + ' ' * (5 - len(str(price)))
-                ask_col = ' ' * col_width
-            else:
-                bid_col = ask_col = ' ' * col_width
-                mid_col = str(price) + ' ' * (5 - len(str(price)))
-            
-            output += '|  ' + bid_col \
-                    + ' | ' + mid_col \
-                    + ' | ' + ask_col \
-                    + '  |\n'
+            bid_price = mid_price - self.tick_size * i
+            ask_price = mid_price + self.tick_size * i
+            bid_volume = self.bids.price_map[bid_price].volume if bid_price in self.bids.price_map else 0
+            ask_volume = self.asks.price_map[ask_price].volume if ask_price in self.asks.price_map else 0
 
-        return output
+            cumulative_bid_volume += bid_volume
+            cumulative_ask_volume += ask_volume
+
+            bids.append((float(bid_price), float(cumulative_bid_volume)))
+            asks.append((float(ask_price), float(cumulative_ask_volume)))
+
+        return {'bids': bids, 'asks': asks}
