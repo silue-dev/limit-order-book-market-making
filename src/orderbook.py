@@ -327,7 +327,7 @@ class OrderBook:
 
         Arguments
         ---------
-        depth  :  The depth of the order book to return.
+        depth :  The depth of the order book to return.
 
         Returns
         -------
