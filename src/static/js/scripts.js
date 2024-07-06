@@ -2,6 +2,11 @@ $(document).ready(function() {
     $('#user').select2();
 });
 
+const plot_margin = {
+    t: 10,  // top margin
+    b: 90   // bottom margin
+};
+
 async function fetchData() {
     const response = await fetch('/mid_price');
     const data = await response.json();
@@ -58,6 +63,7 @@ async function updatePlot() {
                 weight: 'bold'
             }
         },
+        margin: plot_margin,
         barmode: 'overlay'
     }, {
         responsive: true
@@ -118,6 +124,7 @@ async function updateOrderBook() {
                 weight: 'bold'
             }
         },
+        margin: plot_margin,
         barmode: 'overlay'
     }, {
         responsive: true
@@ -162,6 +169,7 @@ async function updatePnlPlot(user) {
                 weight: 'bold'
             }
         },
+        margin: plot_margin,
         barmode: 'overlay'
     }, {
         responsive: true
