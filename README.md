@@ -29,4 +29,4 @@ The project source code is structured as follows:
 ## Result
 The GIF below depicts an example simulation run of the market maker on the limit order book.
 
-<img src="img/result.gif" alt="result" width="500"/>
+<img src="img/simulation.gif" alt="result" width="500"/>
