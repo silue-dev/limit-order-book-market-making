@@ -1,4 +1,4 @@
-/* Apply a modern font consistently */
+/* Apply font consistently */
 body, .navbar, .sidebar, .content, .footer, .form-control, .btn {
     font-family: 'Roboto', sans-serif;
 }
@@ -32,10 +32,10 @@ body {
     padding-top: 56px;
 }
 .sidebar {
-    width: 300px;
-    background: #fff;
+    width: 250px;
+    background: #f4f4f9;
     border-right: 1px solid #ddd;
-    padding: 2rem 1rem;  /* Increased padding for more space */
+    padding: 1rem;
 }
 .sidebar h4 {
     margin-bottom: 1rem;
@@ -73,18 +73,20 @@ footer {
 
 /* Chart title styling */
 .chart-title {
-    font-size: 2rem;
+    font-size: 1.25rem;
+    font-weight: bold;
     text-align: center;
     margin-bottom: 1rem;
     color: #333;
 }
 
-/* Order form styling */
-.order-form {
+/* User selection form styling */
+.user-selection {
     background: #fff;
     padding: 1rem;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     margin-bottom: 2rem;
     width: 100%;
+    font-weight: bold;
 }

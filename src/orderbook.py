@@ -235,7 +235,7 @@ class OrderBook:
         best_bid = self.get_best_bid()
         best_ask = self.get_best_ask()
         if best_bid and best_ask:
-            mid_price = (best_bid + best_ask) / 2
+            mid_price = Decimal((best_bid + best_ask) / 2).quantize(Decimal('0.01'))
         else:
             mid_price = None
         return mid_price
@@ -262,7 +262,7 @@ class OrderBook:
         # Check if the dictionary keys are valid
         required_keys = ['side', 'price', 'volume', 'kind', 'user']
         if not all(key in order_dict for key in required_keys):
-            error_msg = 'Order dictinoary must contain the following keys: '
+            error_msg = 'Order dictionary must contain the following keys: '
             error_msg += '"side", "price", "volume", "kind", and "user". '
             raise KeyError(error_msg)
         

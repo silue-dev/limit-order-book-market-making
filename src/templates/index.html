@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MM Lab</title>
+    <title>LOB-MM</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
@@ -11,7 +11,7 @@
 </head>
 <body>
     <nav class="navbar navbar-expand-lg fixed-top">
-        <a class="navbar-brand" href="#">MM Lab</a>
+        <a class="navbar-brand" href="#">LOB-MM</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -26,17 +26,11 @@
 
     <div class="main-content">
         <div class="sidebar">
-            <form id="orderForm" class="order-form">
+            <form id="userForm" class="user-selection">
                 <div class="form-group">
                     <label for="user">User</label>
                     <select class="form-control" id="user" required></select>
                 </div>
-                <div class="form-group">
-                    <label for="volume">Volume</label>
-                    <input type="number" class="form-control" id="volume" value="10" required>
-                </div>
-                <button type="button" class="btn btn-primary btn-block" onclick="submitOrder('bid')">Buy</button>
-                <button type="button" class="btn btn-danger btn-block" onclick="submitOrder('ask')">Sell</button>
             </form>
             <div id="tradeConfirmation" class="text-success mt-2"></div>
         </div>
@@ -50,7 +44,7 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 2024 MM Lab. All rights reserved.</p>
+            <p>&copy; 2024 LOB-MM.</p>
         </div>
     </footer>
 

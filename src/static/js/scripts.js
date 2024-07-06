@@ -3,7 +3,7 @@ $(document).ready(function() {
 });
 
 async function fetchData() {
-    const response = await fetch('/price');
+    const response = await fetch('/mid_price');
     const data = await response.json();
     return data;
 }
@@ -168,33 +168,6 @@ async function updatePnlPlot(user) {
     });
 }
 
-async function submitOrder(side) {
-    const user = document.getElementById('user').value;
-    const volume = parseFloat(document.getElementById('volume').value);
-    let action = side === 'bid' ? 'bought' : (side === 'ask' ? 'sold' : 'Unknown');
-
-    if (!user || !volume) {
-        document.getElementById('tradeConfirmation').innerText = 'User and volume are required.';
-        return;
-    }
-
-    const response = await fetch('/add_market_order', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ user, side, volume })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-        document.getElementById('tradeConfirmation').innerText = `Error: ${data.error}`;
-    } else {
-        document.getElementById('tradeConfirmation').innerText = `Successfully ${action} ${volume} units.`;
-        await updatePnlPlot(user);
-    }
-}
-
 async function fetchUsers() {
     const response = await fetch('/users');
     const data = await response.json();
@@ -204,7 +177,7 @@ async function fetchUsers() {
 async function populateUserDropdown() {
     const users = await fetchUsers();
     const orderUserSelect = document.getElementById('user');
-    const selectedOrderUser = orderUserSelect.value || 'me';
+    const selectedOrderUser = orderUserSelect.value || 'basic-market-maker';
     orderUserSelect.innerHTML = '';
     users.forEach(user => {
         const option = document.createElement('option');
@@ -219,7 +192,7 @@ async function populateUserDropdown() {
 populateUserDropdown();
 
 async function initializeDefaultUser() {
-    const defaultUser = 'me';
+    const defaultUser = 'basic-market-maker';
     document.getElementById('user').value = defaultUser;
     $('#user').trigger('change');
     await updatePnlPlot(defaultUser);
