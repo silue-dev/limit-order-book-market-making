@@ -3,9 +3,11 @@ $(document).ready(function() {
 });
 
 const plot_margin = {
-    t: 10,  // top margin
-    b: 90   // bottom margin
+    t: 30,
+    b: 90
 };
+
+const plot_height = 225;  // height for all plots
 
 async function fetchData() {
     const response = await fetch('/mid_price');
@@ -70,6 +72,7 @@ async function updatePlot() {
             }
         },
         margin: plot_margin,
+        height: plot_height,
         barmode: 'overlay'
     }, {
         responsive: true
@@ -131,6 +134,7 @@ async function updateOrderBook() {
             }
         },
         margin: plot_margin,
+        height: plot_height,
         barmode: 'overlay'
     }, {
         responsive: true
@@ -176,6 +180,7 @@ async function updatePnlPlot(user) {
             }
         },
         margin: plot_margin,
+        height: plot_height,
         barmode: 'overlay'
     }, {
         responsive: true
@@ -221,6 +226,7 @@ async function updatePositionsPlot(user) {
             }
         },
         margin: plot_margin,
+        height: plot_height,
         barmode: 'overlay'
     }, {
         responsive: true
