@@ -25,6 +25,12 @@ async function fetchPnlHistory(user) {
     return data;
 }
 
+async function fetchPositions(user) {
+    const response = await fetch(`/positions/${user}`);
+    const data = await response.json();
+    return data;
+}
+
 async function updatePlot() {
     const data = await fetchData();
     Plotly.react('plot', [{
@@ -176,6 +182,51 @@ async function updatePnlPlot(user) {
     });
 }
 
+async function updatePositionsPlot(user) {
+    const data = await fetchPositions(user);
+    Plotly.react('positionsPlot', [{
+        x: Array.from({ length: data.positions.length }, (_, i) => i + 1),
+        y: data.positions,
+        mode: 'lines',
+        name: `Positions for ${data.user}`
+    }], {
+        xaxis: {
+            title: 'Time',
+            titlefont: {
+                family: 'Arial, sans-serif',
+                size: 18,
+                color: 'black',
+                weight: 'bold'
+            },
+            tickfont: {
+                family: 'Arial, sans-serif',
+                size: 14,
+                color: 'black',
+                weight: 'bold'
+            }
+        },
+        yaxis: {
+            title: 'Position',
+            titlefont: {
+                family: 'Arial, sans-serif',
+                size: 18,
+                color: 'black',
+                weight: 'bold'
+            },
+            tickfont: {
+                family: 'Arial, sans-serif',
+                size: 14,
+                color: 'black',
+                weight: 'bold'
+            }
+        },
+        margin: plot_margin,
+        barmode: 'overlay'
+    }, {
+        responsive: true
+    });
+}
+
 async function fetchUsers() {
     const response = await fetch('/users');
     const data = await response.json();
@@ -204,6 +255,7 @@ async function initializeDefaultUser() {
     document.getElementById('user').value = defaultUser;
     $('#user').trigger('change');
     await updatePnlPlot(defaultUser);
+    await updatePositionsPlot(defaultUser);
 }
 
 setInterval(updatePlot, 100);
@@ -212,6 +264,7 @@ setInterval(async () => {
     const user = document.getElementById('user').value;
     if (user) {
         await updatePnlPlot(user);
+        await updatePositionsPlot(user);
     }
 }, 100);
 

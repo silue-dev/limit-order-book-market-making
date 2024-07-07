@@ -1,8 +1,8 @@
 from time import time
 from decimal import Decimal
 from collections import deque
-from orders import Order, OrderTree
 from collections import defaultdict
+from orders import Order, OrderTree
 
 class OrderBook:
     """
@@ -22,7 +22,7 @@ class OrderBook:
         self.tick_size = Decimal('0.1')
 
         self.user_trades = defaultdict(list)
-        self.user_positions = defaultdict(lambda: Decimal(0))
+        self.user_positions = defaultdict(lambda: [Decimal(0)])
         self.user_pnls = defaultdict(lambda: [Decimal(0)])
 
         self.mid_prices = []
@@ -177,20 +177,32 @@ class OrderBook:
         # Update the tape
         self.tape.append(order_trade)
 
-        # Update the user's trades so far
+        # Update the user trades so far
         if order.user != None: self.user_trades[order.user].append(order_trade)
         if head_order.user != None: self.user_trades[head_order.user].append(head_order_trade)
 
-        # Update the user's positions
-        if order.side == 'bid':
-            if order.user != None: self.user_positions[order.user] += volume_traded
-            if head_order.user != None: self.user_positions[head_order.user] -= volume_traded
-        elif order.side == 'ask':
-            if order.user != None: self.user_positions[order.user] -= volume_traded
-            if head_order.user != None: self.user_positions[head_order.user] += volume_traded
+        # Update all user positions
+        for user in self.user_trades.keys():
+            if user not in [order.user, head_order.user]:
+                self.user_positions[user].append(self.user_positions[user][-1])
+            else:
+                if order.side == 'bid':
+                    if order.user != None: self.user_positions[order.user].append(
+                        self.user_positions[order.user][-1] + volume_traded
+                        )
+                    if head_order.user != None: self.user_positions[head_order.user].append(
+                        self.user_positions[head_order.user][-1] - volume_traded
+                        )
+                elif order.side == 'ask':
+                    if order.user != None: self.user_positions[order.user].append(
+                        self.user_positions[order.user][-1] - volume_traded
+                        )
+                    if head_order.user != None: self.user_positions[head_order.user].append(
+                        self.user_positions[head_order.user][-1] + volume_traded
+                        )
         
-        # Update the user's pnls
-        for user in self.user_positions.keys():
+        # Update all user pnls
+        for user in self.user_trades.keys():
             self.user_pnls[user].append(self.get_pnl(user))
 
         # Update mid prices
@@ -307,7 +319,7 @@ class OrderBook:
         The current PnL of the user.
 
         """
-        unrealized_pnl = self.user_positions[user] * self.get_mid_price()
+        unrealized_pnl = self.user_positions[user][-1] * self.get_mid_price()
 
         trades = self.user_trades[user]
         realized_pnl = Decimal(0)

@@ -148,7 +148,7 @@ class MarketSimulator:
         bid_ids, ask_ids = self.add_random_limit_orders(
             mid_price=Decimal(init_price)
         )
-        self.ob.user_positions[self.default_user] = Decimal(0)
+        self.ob.user_positions[self.default_user] = [Decimal(0)]
 
         self.bid_id_history += bid_ids
         self.ask_id_history += ask_ids
@@ -204,11 +204,19 @@ class Server:
         self.sim = None
 
         @self.app.route('/')
-        def index():
+        def index() -> str:
+            """
+            Renders the rendered HTML of the index page.
+
+            """
             return render_template('index.html')
 
         @self.app.route('/mid_price')
-        def mid_price():
+        def mid_price() -> dict:
+            """
+            Returns the mid price data as a JSON response.
+
+            """
             with self.sim.lock:
                 mid_price_data = {
                     'x': list(range(len(self.sim.ob.mid_prices))),
@@ -217,13 +225,17 @@ class Server:
             return jsonify(mid_price_data)
 
         @self.app.route('/orderbook')
-        def orderbook():
+        def orderbook() -> dict:
+            """
+            Returns the order book data as a JSON response.
+
+            """
             with self.sim.lock:
                 ob_data = self.sim.ob.get_visualization_data()
             return jsonify(ob_data)
         
         @self.app.route('/add_order', methods=['POST'])
-        def add_order():
+        def add_order() -> dict:
             """
             Adds an order.
 
@@ -234,6 +246,10 @@ class Server:
             volume :  The volume of the order.
             kind   :  The kind of order ('market', 'limit', or 'ioc').
             user   :  The user placing the order.
+
+            Returns
+            -------
+            The added order details as a JSON response.
 
             """
             data = request.json
@@ -256,7 +272,19 @@ class Server:
             return jsonify({'order_dict': order_dict})
         
         @self.app.route('/del_order', methods=['POST'])
-        def del_order():
+        def del_order() -> dict:
+            """
+            Deletes an order.
+
+            Arguments (from request.json)
+            ---------
+            order_id : The ID of the order to delete.
+
+            Returns
+            -------
+            The ID of the deleted order as a JSON response.
+
+            """
             data = request.json
             order_id = data.get('order_id')
             with self.sim.lock:
@@ -267,13 +295,9 @@ class Server:
                 return jsonify({'order_id': str(order_id)}), 400
         
         @self.app.route('/users')
-        def users():
+        def users() -> dict:
             """
-            Returns the list of users.
-
-            Returns
-            -------
-            The list of users.
+            Returns the list of users as a JSON response.
 
             """
             with self.sim.lock:
@@ -281,7 +305,7 @@ class Server:
             return jsonify(users_list)
 
         @self.app.route('/pnl/<user>')
-        def pnl(user):
+        def pnl(user: str) -> dict:
             """
             Returns the PnL of a user.
 
@@ -291,7 +315,7 @@ class Server:
 
             Returns
             -------
-            The PnL of the user.
+            The PnL of the user as a JSON response.
 
             """
             with self.sim.lock:
@@ -299,7 +323,7 @@ class Server:
             return jsonify({'user': user, 'pnl': str(user_pnl)})
         
         @self.app.route('/pnl_history/<user>')
-        def pnl_history(user):
+        def pnl_history(user: str) -> dict:
             """
             Returns the PnL history of a user.
 
@@ -309,13 +333,32 @@ class Server:
 
             Returns
             -------
-            The PnL history of the user.
+            The PnL history of the user as a JSON response.
 
             """
             with self.sim.lock:
                 pnl_history = self.sim.ob.user_pnls[user]
                 pnl_data = list(map(float, pnl_history))
             return jsonify({'user': user, 'pnl': pnl_data})
+        
+        @self.app.route('/positions/<user>')
+        def positions(user: str) -> dict:
+            """
+            Returns the positions of a user.
+
+            Arguments
+            ---------
+            user :  The user.
+
+            Returns
+            -------
+            The positions of the user as a JSON response.
+
+            """
+            with self.sim.lock:
+                positions = self.sim.ob.user_positions.get(user, [])
+                positions_data = list(map(float, positions))
+            return jsonify({'user': user, 'positions': positions_data})
 
     def run_simulation(self) -> None:
         """
