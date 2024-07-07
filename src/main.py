@@ -41,7 +41,8 @@ def run_market_maker(
     user: str = 'basic-market-maker',
     server_url: str = 'http://localhost:5001',
     spread: float = 0.1,
-    volume: float = 5.0,
+    max_volume: float = 5.0,
+    max_delta: float = 100.0,
     sleep: float = 1.0,
     start_delay: float = 5.0) -> None:
     """
@@ -52,14 +53,19 @@ def run_market_maker(
     user        :  The username of the market maker agent.
     server_url  :  The URL of the server the market maker connects to.
     spread      :  The spread of the quote.
-    volume      :  The volume of the quote orders.
+    max_volume  :  The maximum volume of the quote orders.
+    max_delta  :  The maximum (absolute) inventory position size. 
     sleep       :  The time to wait in seconds before deleting the quotes.
     start_delay :  The initial delay before starting the market maker.
 
     """
     time.sleep(start_delay)
-    agent = MarketMaker(user=user, server_url=server_url)
-    agent.run(spread=spread, volume=volume, sleep=sleep)
+    agent = MarketMaker(user=user, 
+                        server_url=server_url)
+    agent.run(spread=spread, 
+              max_volume=max_volume, 
+              max_delta=max_delta,
+              sleep=sleep)
 
 
 if __name__ == '__main__':
@@ -76,9 +82,10 @@ if __name__ == '__main__':
         'user': 'basic-market-maker',
         'server_url': 'http://localhost:5001',
         'spread': 0.1,
-        'volume': 10.0,
+        'max_volume': 10.0,
+        'max_delta': 100.0,
         'sleep': 1.0,
-        'start_delay': 3.0
+        'start_delay': 1.0
     }
 
     server_thread: Thread = Thread(target=run_market_simulator, 
