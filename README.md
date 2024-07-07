@@ -1,9 +1,9 @@
 # Limit Order Book Market Making
-This project implements a limit order book matching engine and a market maker agent in Python. The engine simulates a dynamic market environment by processing randomly incoming limit orders, market orders, and optionally IOC orders. The resulting mid-price exhibits behavior similar to a Brownian motion. The market maker agent continuously places quotes around the mid-price to provide liquidity.
+This project implements a limit order book matching engine and a market maker agent in Python. The limit order book matching engine runs on a server that functions as an exchange and simulates a dynamic market environment by processing randomly incoming limit orders, market orders, and optionally IOC orders. The resulting mid-price exhibits behavior similar to a Brownian motion. Meanwhile, the market maker agent continuously sends order requests to the exchange, placing quotes around the mid-price to provide liquidity and generate a profit.
 
-<div style="text-align: center;">
+<p align="center">
     <img src="img/simulation.gif" alt="result" width="500"/>
-</div>
+</p>
 
 ## How to Run
 
@@ -24,7 +24,9 @@ Finally, open the link to your local server (http://localhost:5001) in a browser
 ## Project Structure
 The project source code is structured as follows:
 
-- `src/exchange.py`: Contains the implementation of the the market simulation server that runs on a limit order book matching engine.
+- `src/orderbook.py`: Contains the implementation of a limit order book matching engine.
+
+- `src/exchange.py`: Contains the implementation of the market simulation server that runs the limit order book matching engine.
 
 - `src/marketmaker.py`: Contains the implementation of the market maker agent.
 
