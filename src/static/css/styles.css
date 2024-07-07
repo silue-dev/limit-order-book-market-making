@@ -29,7 +29,7 @@ body {
 .main-content {
     flex: 1;
     display: flex;
-    padding-top: 56px;
+    padding-top: 35px;
 }
 .sidebar {
     width: 250px;
@@ -69,6 +69,7 @@ footer {
     text-align: center;
     position: static;
     width: 100%;
+    height: 50px;
 }
 
 /* Chart title styling */
@@ -77,6 +78,7 @@ footer {
     font-weight: bold;
     text-align: center;
     margin-bottom: 1rem;
+    margin-top: 2rem;
     color: #333;
 }
 

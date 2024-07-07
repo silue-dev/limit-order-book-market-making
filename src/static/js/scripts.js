@@ -7,7 +7,7 @@ const plot_margin = {
     b: 90
 };
 
-const plot_height = 225;  // height for all plots
+const plot_height = 225;
 
 async function fetchData() {
     const response = await fetch('/mid_price');
@@ -39,7 +39,8 @@ async function updatePlot() {
         x: data.x,
         y: data.y,
         mode: 'lines',
-        name: 'Price'
+        name: 'Price',
+        line: { color: '#1f77b4' }
     }], {
         xaxis: {
             title: 'Time',
@@ -147,7 +148,8 @@ async function updatePnlPlot(user) {
         x: Array.from({ length: data.pnl.length }, (_, i) => i + 1),
         y: data.pnl,
         mode: 'lines',
-        name: `PnL for ${data.user}`
+        name: `PnL for ${data.user}`,
+        line: { color: '#9467bd' }
     }], {
         xaxis: {
             title: 'Time',
@@ -193,7 +195,8 @@ async function updatePositionsPlot(user) {
         x: Array.from({ length: data.positions.length }, (_, i) => i + 1),
         y: data.positions,
         mode: 'lines',
-        name: `Positions for ${data.user}`
+        name: `Positions for ${data.user}`,
+        line: { color: '#ff7f0e' }
     }], {
         xaxis: {
             title: 'Time',
