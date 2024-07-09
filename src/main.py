@@ -10,20 +10,20 @@ def run_market_simulator(
     take_volume: float = 25.0,
     make_volume: float = 10.0,
     max_order_volume: float = 100.0,
-    max_tree_volume: float = 1000.0,
+    max_ladder_volume: float = 1000.0,
     sleep: float = 0.05) -> None:
     """
     Initializes and starts the market simulation server.
 
     Arguments
     ---------
-    init_price       :  The initial price for the market simulator.
-    bid_prob         :  The probability of adding a bid order.
-    take_volume      :  The base taker (i.e., market order) volume.
-    make_volume      :  The base maker (i.e., limit order) volume.
-    max_order_volume :  The maximum volume of a single order.
-    max_tree_volume  :  The approximate maximum volume of an order tree.
-    sleep            :  The time to sleep between steps in seconds.
+    init_price         :  The initial price for the market simulator.
+    bid_prob           :  The probability of adding a bid order.
+    take_volume        :  The base taker (i.e., market order) volume.
+    make_volume        :  The base maker (i.e., limit order) volume.
+    max_order_volume   :  The maximum volume of a single order.
+    max_ladder_volume  :  The approximate maximum volume of an order ladder.
+    sleep              :  The time to sleep between steps in seconds.
 
     """
     server = Server(
@@ -32,7 +32,7 @@ def run_market_simulator(
         take_volume=take_volume,
         make_volume=make_volume,
         max_order_volume=max_order_volume,
-        max_tree_volume=max_tree_volume,
+        max_ladder_volume=max_ladder_volume,
         sleep=sleep
     )
     server.start()
@@ -54,7 +54,7 @@ def run_market_maker(
     server_url  :  The URL of the server the market maker connects to.
     spread      :  The spread of the quote.
     max_volume  :  The maximum volume of the quote orders.
-    max_delta  :  The maximum (absolute) inventory position size. 
+    max_delta   :  The maximum (absolute) inventory position size. 
     sleep       :  The time to wait in seconds before deleting the quotes.
     start_delay :  The initial delay before starting the market maker.
 
@@ -75,7 +75,7 @@ if __name__ == '__main__':
         'take_volume': 25.0,
         'make_volume': 10.0,
         'max_order_volume': 100.0,
-        'max_tree_volume': 1000.0,
+        'max_ladder_volume': 1000.0,
         'sleep': 0.05
     }
     market_maker_params = {

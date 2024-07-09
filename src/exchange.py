@@ -13,15 +13,15 @@ class MarketSimulator:
 
     Arguments
     ---------
-    ob              :  The order book to simulate the market on.
-    max_tree_volume :  The approximate maximum volume of an order tree.
+    ob                :  The order book to simulate the market on.
+    max_ladder_volume :  The approximate maximum volume of an order ladder.
     
     """
     def __init__(self, 
                  ob: OrderBook, 
-                 max_tree_volume: float = 1000.0) -> None:
+                 max_ladder_volume: float = 1000.0) -> None:
         self.ob = ob
-        self.max_tree_volume = max_tree_volume
+        self.max_ladder_volume = max_ladder_volume
 
         self.bid_id_history = deque()
         self.ask_id_history = deque()
@@ -116,12 +116,12 @@ class MarketSimulator:
         Deletes old orders from the order book.
 
         """
-        while self.ob.bids.volume > self.max_tree_volume \
-                                    + abs(random.gauss(0, self.max_tree_volume / 100)):
+        while self.ob.bids.volume > self.max_ladder_volume \
+                                    + abs(random.gauss(0, self.max_ladder_volume / 100)):
             bid_id = self.bid_id_history.popleft()
             self.ob.del_order(bid_id)
-        while self.ob.asks.volume > self.max_tree_volume \
-                                    + abs(random.gauss(0, self.max_tree_volume / 100)):
+        while self.ob.asks.volume > self.max_ladder_volume \
+                                    + abs(random.gauss(0, self.max_ladder_volume / 100)):
             ask_id = self.ask_id_history.popleft()
             self.ob.del_order(ask_id)
 
@@ -173,14 +173,14 @@ class Server:
 
     Arguments
     ---------
-    init_price       :  The initial price.
-    steps            :  The number of steps to run. If None, runs indefinitely.
-    take_volume      :  The base taker (i.e., market order) volume.
-    make_volume      :  The base maker (i.e., limit order) volume.
-    max_order_volume :  The maximum volume of a single order.
-    max_tree_volume  :  The approximate maximum volume of an order tree.
-    bid_prob         :  The probability of adding a bid order.
-    sleep            :  The time to sleep between steps.
+    init_price         :  The initial price.
+    steps              :  The number of steps to run. If None, runs indefinitely.
+    take_volume        :  The base taker (i.e., market order) volume.
+    make_volume        :  The base maker (i.e., limit order) volume.
+    max_order_volume   :  The maximum volume of a single order.
+    max_ladder_volume  :  The approximate maximum volume of an order ladder.
+    bid_prob           :  The probability of adding a bid order.
+    sleep              :  The time to sleep between steps.
     
     """
     def __init__(self, 
@@ -189,7 +189,7 @@ class Server:
                  take_volume: float = 10.0,
                  make_volume: float = 10.0,
                  max_order_volume: float = 100.0,
-                 max_tree_volume: float = 1000.0,
+                 max_ladder_volume: float = 1000.0,
                  bid_prob: float = 0.5,
                  sleep: float = 0.1) -> None:
         self.init_price = init_price
@@ -197,7 +197,7 @@ class Server:
         self.take_volume = take_volume
         self.make_volume = make_volume
         self.max_order_volume = max_order_volume
-        self.max_tree_volume = max_tree_volume
+        self.max_ladder_volume = max_ladder_volume
         self.bid_prob = bid_prob
         self.sleep = sleep
         self.app = Flask(__name__)
@@ -367,7 +367,7 @@ class Server:
         """
         ob = OrderBook(max_order_volume=self.max_order_volume)
         self.sim = MarketSimulator(ob=ob,
-                                   max_tree_volume=self.max_tree_volume)
+                                   max_ladder_volume=self.max_ladder_volume)
         self.sim.run(init_price=self.init_price,
                      steps=self.steps, 
                      take_volume=self.take_volume,
@@ -390,6 +390,6 @@ if __name__ == '__main__':
                     take_volume=25.0,
                     make_volume=10.0,
                     max_order_volume=100.0,
-                    max_tree_volume=1000.0,
+                    max_ladder_volume=1000.0,
                     sleep=0.05)
     server.start()

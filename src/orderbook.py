@@ -2,7 +2,7 @@ from time import time
 from decimal import Decimal
 from collections import deque
 from collections import defaultdict
-from orders import Order, OrderTree
+from orders import Order, OrderLadder
 
 class OrderBook:
     """
@@ -15,8 +15,8 @@ class OrderBook:
     """
     def __init__(self, max_order_volume: float = 100.0) -> None:
         self.max_order_volume = max_order_volume
-        self.bids = OrderTree('bid')
-        self.asks = OrderTree('ask')
+        self.bids = OrderLadder('bid')
+        self.asks = OrderLadder('ask')
         self.tape = deque()
         self.event_num = 0
         self.tick_size = Decimal('0.1')

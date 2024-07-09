@@ -52,7 +52,7 @@ class Order:
         amount = Decimal(amount).quantize(Decimal(self.tick_size))
         self.volume += amount
         self.order_list.volume += amount
-        self.order_list.tree.volume += amount
+        self.order_list.ladder.volume += amount
     
     def __str__(self) -> str:
         """
@@ -73,13 +73,13 @@ class OrderList:
 
     Arguments
     ---------
-    side  :  The side of the tree w.r.t. the order book ('bid' or 'ask').
+    side  :  The side of the ladder w.r.t. the order book ('bid' or 'ask').
     price :  The price level of the order list.
 
     """
-    def __init__(self, tree: 'OrderTree', price: Decimal) -> None:
-        self.tree = tree
-        self.side = tree.side
+    def __init__(self, ladder: 'OrderLadder', price: Decimal) -> None:
+        self.ladder = ladder
+        self.side = ladder.side
         self.price = price
         self.head_order = None
         self.tail_order = None
@@ -168,18 +168,18 @@ class OrderList:
             self.last = self.last.next_order
             return return_value
 
-class OrderTree:
+class OrderLadder:
     """
     An entire side of the order book, composed of all order lists (i.e., 
-    price levels) on that side. As the name suggests, this entire side 
-    is structured as a (red-black) tree. 
+    price levels) on that side. This structure represents a ladder of
+    price levels, sorted according to price.
     
-    The total order book is composed of two order trees, one for the 
+    The total order book is composed of two order ladders, one for the 
     bid side and one for the ask side.
 
     Arguments
     ---------
-    side :  The side of the tree w.r.t. the order book ('bid' or 'ask').
+    side :  The side of the ladder w.r.t. the order book ('bid' or 'ask').
 
     """
     def __init__(self, side: str) -> None:
@@ -193,7 +193,7 @@ class OrderTree:
     
     def price_exists(self, price: Decimal) -> bool:
         """
-        Checks if a given price level exists in the order tree.
+        Checks if a given price level exists in the order ladder.
 
         Arguments
         ---------
@@ -208,7 +208,7 @@ class OrderTree:
     
     def add_price(self, price: Decimal) -> None:
         """
-        Adds a new given price level to the order tree.
+        Adds a new given price level to the order ladder.
 
         Arguments
         ---------
@@ -221,7 +221,7 @@ class OrderTree:
 
     def del_price(self, price: Decimal) -> None:
         """
-        Deletes a given price level from the order tree if it exists.
+        Deletes a given price level from the order ladder if it exists.
 
         Arguments
         ---------
@@ -234,8 +234,8 @@ class OrderTree:
     
     def get_best_price(self) -> Decimal | None:
         """"
-        Returns the best price in the order tree. For a tree 
-        of side 'bid', this is the highest price. For a tree 
+        Returns the best price in the order ladder. For a ladder 
+        of side 'bid', this is the highest price. For a ladder 
         of side 'ask', this is the lowest price.
 
         """
@@ -247,7 +247,7 @@ class OrderTree:
         
     def order_exists(self, order: Order) -> bool:
         """
-        Checks if a given order exists in the order tree.
+        Checks if a given order exists in the order ladder.
 
         Arguments
         ---------
@@ -263,8 +263,8 @@ class OrderTree:
     def get_order_list(self, price: Decimal) -> OrderList:
         """
         Returns the order list associated with the given price level.
-        For a tree of side 'bid', this is the order list at the highest price. 
-        For a tree of side 'ask', this is the order list at the lowest price.
+        For a ladder of side 'bid', this is the order list at the highest price. 
+        For a ladder of side 'ask', this is the order list at the lowest price.
 
         Arguments
         ---------
@@ -288,7 +288,7 @@ class OrderTree:
     
     def add_order(self, order: Order) -> None:
         """
-        Adds a given order to the order tree. If the order (id) already exists,
+        Adds a given order to the order ladder. If the order (id) already exists,
         performs an update by simply removing the existing order and adding the new one.
 
         Arguments
@@ -308,7 +308,7 @@ class OrderTree:
 
     def del_order(self, id: str) -> bool:
         """
-        Deletes an order from the order tree, given its order id.
+        Deletes an order from the order ladder, given its order id.
 
         Arguments
         ---------
@@ -335,7 +335,7 @@ class OrderTree:
 
     def get_head_order(self) -> Order:
         """
-        Returns the head order of the order tree.
+        Returns the head order of the order ladder.
 
         """
         if self.volume > 0:
@@ -344,7 +344,7 @@ class OrderTree:
     def match_order(self, 
                     order: Order) -> tuple[Order, Decimal, Decimal]:
         """
-        Matches the given order on the order tree, executing a trade.
+        Matches the given order on the order ladder, executing a trade.
 
         Arguments
         ---------
@@ -352,10 +352,10 @@ class OrderTree:
 
         Returns
         -------
-        order         :  The order, with updated volume.
-        head_order    :  The head limit order being matched in the order book.
-        trade_price   :  The price at which the trade occurred.
-        trade_volume  :  The volume that has been traded.
+        order        :  The order, with updated volume.
+        head_order   :  The head limit order being matched in the order book.
+        trade_price  :  The price at which the trade occurred.
+        trade_volume :  The volume that has been traded.
 
         """
         if self.volume > 0:
