@@ -1,5 +1,5 @@
 # Limit Order Book Market Making
-This project implements a limit order book matching engine and a market maker agent in Python. The limit order book matching engine runs on a server that functions as an exchange and simulates a dynamic market environment by processing randomly incoming limit orders, market orders, and optionally IOC orders. The resulting mid-price exhibits behavior similar to a Brownian motion. Meanwhile, the market maker agent continuously sends order requests to the exchange, placing quotes around the mid-price to provide liquidity and generate a steady profit.
+This project implements a limit order book matching engine and a market maker agent in Python. The limit order book matching engine runs on a server that functions as an exchange and simulates a dynamic market environment by processing randomly incoming limit orders, market orders, and optionally IOC orders. The resulting mid-price exhibits behavior similar to a Brownian motion. Meanwhile, the market maker agent continuously sends order requests to the exchange, placing quotes around the mid-price to provide liquidity and generate a steady profit. The agent adjusts these quotes to neutralize their inventory position and maintain a non-directional strategy.
 
 <p align="center">
     <img src="img/result.gif" alt="result" width="500"/>
