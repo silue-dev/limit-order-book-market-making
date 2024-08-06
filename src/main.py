@@ -1,4 +1,3 @@
-# main.py
 import time
 from threading import Thread
 from exchange import Server

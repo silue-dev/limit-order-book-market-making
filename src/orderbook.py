@@ -174,14 +174,14 @@ class OrderBook:
             'maker': head_order.user
         }
 
-        # Update the tape
+        # Update the tape.
         self.tape.append(order_trade)
 
-        # Update the user trades so far
+        # Update the user trades so far.
         if order.user != None: self.user_trades[order.user].append(order_trade)
         if head_order.user != None: self.user_trades[head_order.user].append(head_order_trade)
 
-        # Update all user positions
+        # Update all user positions.
         for user in self.user_trades.keys():
             if user not in [order.user, head_order.user]:
                 self.user_positions[user].append(self.user_positions[user][-1])
@@ -201,11 +201,11 @@ class OrderBook:
                         self.user_positions[head_order.user][-1] + volume_traded
                         )
         
-        # Update all user pnls
+        # Update all user pnls.
         for user in self.user_trades.keys():
             self.user_pnls[user].append(self.get_pnl(user))
 
-        # Update mid prices
+        # Update mid prices.
         self.mid_prices.append(self.get_mid_price())
 
     def del_order(self, id: str) -> bool:
@@ -271,21 +271,21 @@ class OrderBook:
         order :  The order object.
 
         """
-        # Check if the dictionary keys are valid
+        # Check if the dictionary keys are valid.
         required_keys = ['side', 'price', 'volume', 'kind', 'user']
         if not all(key in order_dict for key in required_keys):
             error_msg = 'Order dictionary must contain the following keys: '
             error_msg += '"side", "price", "volume", "kind", and "user". '
             raise KeyError(error_msg)
         
-        # Check if the side is valid
+        # Check if the side is valid.
         side = order_dict['side'] 
         if side not in ['bid', 'ask']:
             error_msg = f'Invalid order side "{order.side}". '
             requirement_msg = 'Order side must be either "bid" or "ask". '
             raise ValueError(error_msg + requirement_msg)
         
-        # Get the order details
+        # Get the order details.
         price = order_dict['price']
         volume = max(0, Decimal(order_dict['volume']))
         volume = min(volume, Decimal(self.max_order_volume))
@@ -295,7 +295,7 @@ class OrderBook:
         self.event_num += 1
         id = self.event_num
 
-        # Create the order object
+        # Create the order object.
         order = Order(id=id,
                       side=side,
                       price=price,

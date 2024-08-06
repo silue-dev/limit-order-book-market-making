@@ -137,11 +137,11 @@ class OrderList:
             if order.next_order != None and order.prev_order != None:
                 order.next_order.prev_order = order.prev_order
                 order.prev_order.next_order = order.next_order
-            # If the order is the head order
+            # If the order is the head order,
             elif order.next_order != None and order.prev_order == None:
                 order.next_order.prev_order = None
                 self.head_order = order.next_order
-            # If the order is the tail order
+            # If the order is the tail order,
             elif order.next_order == None and order.prev_order != None:
                 order.prev_order.next_order = None
                 self.tail_order = order.prev_order

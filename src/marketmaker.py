@@ -178,18 +178,18 @@ class MarketMaker:
                 mid_price = self.get_mid_price()
                 position = self.get_position()
 
-                # Convert all values to Decimal for accurate computations
+                # Convert all values to Decimal for accurate computations.
                 spread = Decimal(spread)
                 max_volume = Decimal(max_volume)
                 max_delta = Decimal(max_delta)
 
-                # Calculate the shift based on the position and maximum delta
+                # Calculate the shift based on the position and maximum delta.
                 price_shift = (position / max_delta) * spread
 
-                # Adjust indifference price based on position
+                # Adjust indifference price based on position.
                 indiff_price = mid_price - price_shift
 
-                # Calculate bid and ask volumes based on position
+                # Calculate bid and ask volumes based on position.
                 if position >= 0:
                     bid_volume = max_volume * (1 - (position / max_delta))
                     ask_volume = max_volume
