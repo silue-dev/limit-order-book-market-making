@@ -31,4 +31,3 @@ The project source code is structured as follows:
 - `src/marketmaker.py`: Contains the implementation of the market maker agent.
 
 - `src/main.py`: Runs both the market simulator and the market maker simultaneously.
-
