@@ -87,7 +87,7 @@ class OrderList:
         self.volume = 0
         self.last = None  # helper for iteration
 
-    def get_head_order(self) -> Order:
+    def get_head_order(self) -> Order | None:
         """
         Returns the head order of the order list.
 
@@ -260,7 +260,7 @@ class OrderLadder:
         """
         return order in self.order_map
         
-    def get_order_list(self, price: Decimal) -> OrderList:
+    def get_order_list(self, price: Decimal) -> OrderList | None:
         """
         Returns the order list associated with the given price level.
         For a ladder of side 'bid', this is the order list at the highest price. 
@@ -278,7 +278,7 @@ class OrderLadder:
         if self.price_exists(price):
             return self.price_map[price]
     
-    def get_best_priced_order_list(self) -> OrderList:
+    def get_best_priced_order_list(self) -> OrderList | None:
         """
         Returns the order list associated with the best price level.
 
@@ -333,7 +333,7 @@ class OrderLadder:
         else:
             return False
 
-    def get_head_order(self) -> Order:
+    def get_head_order(self) -> Order | None:
         """
         Returns the head order of the order ladder.
 
@@ -342,7 +342,7 @@ class OrderLadder:
             return self.price_map[self.get_best_price()].get_head_order()
     
     def match_order(self, 
-                    order: Order) -> tuple[Order, Decimal, Decimal]:
+                    order: Order) -> tuple[Order, Decimal, Decimal] | None:
         """
         Matches the given order on the order ladder, executing a trade.
 

@@ -225,21 +225,21 @@ class OrderBook:
         ask_deletion = self.asks.del_order(id)
         return True if bid_deletion or ask_deletion else False
 
-    def get_best_bid(self) -> Decimal:
+    def get_best_bid(self) -> Decimal | None:
         """
         Returns the best bid price.
         
         """
         return self.bids.get_best_price()
 
-    def get_best_ask(self) -> Decimal:
+    def get_best_ask(self) -> Decimal | None:
         """
         Returns the best ask price.
 
         """
         return self.asks.get_best_price()
     
-    def get_mid_price(self) -> Decimal:
+    def get_mid_price(self) -> Decimal | None:
         """
         Returns the mid price.
 
