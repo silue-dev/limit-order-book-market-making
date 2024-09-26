@@ -6,7 +6,6 @@ This project implements a limit order book matching engine and a market maker ag
 </p>
 
 ## How to Run
-
 Make sure to have both Python (e.g., version 3.12.3) and `pip` installed. Open the root directory of this project in your terminal and run the following command to install all required packages:
 
 ```sh
