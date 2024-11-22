@@ -37,7 +37,7 @@ class MarketMaker:
         response = requests.get(f'{self.server_url}/mid_price')
         if response.status_code == 200:
             price_data = response.json()
-            mid_price = price_data['y'][-1]
+            mid_price = price_data['prices'][-1]
             return Decimal(mid_price)
         else:
             raise Exception(f'Failed to retrieve mid price: {response.json()}')

@@ -36,11 +36,11 @@ async function fetchPositions(user) {
 async function updatePlot() {
     const data = await fetchData();
     Plotly.react('plot', [{
-        x: data.x,
-        y: data.y,
+        x: data.times,
+        y: data.prices,
         mode: 'lines',
         name: 'Price',
-        line: { color: '#1f77b4' }
+        line: { color: '#1f77b4', shape: 'hv' }
     }], {
         xaxis: {
             title: 'Time',
@@ -55,7 +55,8 @@ async function updatePlot() {
                 size: 14,
                 color: 'black',
                 weight: 'bold'
-            }
+            },
+            tickangle: 0
         },
         yaxis: {
             title: 'Price',
@@ -145,11 +146,11 @@ async function updateOrderBook() {
 async function updatePnlPlot(user) {
     const data = await fetchPnlHistory(user);
     Plotly.react('pnlPlot', [{
-        x: Array.from({ length: data.pnl.length }, (_, i) => i + 1),
-        y: data.pnl,
+        x: data.times,
+        y: data.pnls,
         mode: 'lines',
         name: `PnL for ${data.user}`,
-        line: { color: '#9467bd' }
+        line: { color: '#9467bd', shape: 'hv' }
     }], {
         xaxis: {
             title: 'Time',
@@ -164,7 +165,8 @@ async function updatePnlPlot(user) {
                 size: 14,
                 color: 'black',
                 weight: 'bold'
-            }
+            },
+            tickangle: 0
         },
         yaxis: {
             title: 'PnL',
@@ -192,11 +194,11 @@ async function updatePnlPlot(user) {
 async function updatePositionsPlot(user) {
     const data = await fetchPositions(user);
     Plotly.react('positionsPlot', [{
-        x: Array.from({ length: data.positions.length }, (_, i) => i + 1),
+        x: data.times,
         y: data.positions,
         mode: 'lines',
         name: `Positions for ${data.user}`,
-        line: { color: '#ff7f0e' }
+        line: { color: '#ff7f0e', shape: 'hv' }
     }], {
         xaxis: {
             title: 'Time',
@@ -211,7 +213,8 @@ async function updatePositionsPlot(user) {
                 size: 14,
                 color: 'black',
                 weight: 'bold'
-            }
+            },
+            tickangle: 0
         },
         yaxis: {
             title: 'Position',

@@ -1,6 +1,7 @@
 import time
 import random
 import threading
+import numpy as np
 from decimal import Decimal
 from scipy.stats import norm
 from collections import deque
@@ -131,7 +132,7 @@ class MarketSimulator:
             take_volume: float = 10.0,
             make_volume: float = 10.0,
             bid_prob: float = 0.5,
-            sleep: float = 0.1) -> None:
+            mean_sleep: float = 0.1) -> None:
         """
         Runs the market simulator.
 
@@ -142,13 +143,13 @@ class MarketSimulator:
         take_volume :  The base taker (i.e., market order) volume.
         make_volume :  The base maker (i.e., limit order) volume.
         bid_prob    :  The probability of adding a bid order.
-        sleep       :  The time to sleep between steps.
+        mean_sleep  :  The mean time to sleep between steps.
 
         """
         bid_ids, ask_ids = self.add_random_limit_orders(
             mid_price=Decimal(init_price)
         )
-        self.ob.user_positions[self.default_user] = [Decimal(0)]
+        _ = self.ob.user_positions[self.default_user]
 
         self.bid_id_history += bid_ids
         self.ask_id_history += ask_ids
@@ -165,7 +166,9 @@ class MarketSimulator:
             self.ask_id_history += ask_ids
             self.del_old_orders()
             step += 1
-            time.sleep(sleep)
+
+            sleep_time = np.random.exponential(mean_sleep)
+            time.sleep(sleep_time)
 
 class Server:
     """
@@ -218,10 +221,9 @@ class Server:
 
             """
             with self.sim.lock:
-                mid_price_data = {
-                    'x': list(range(len(self.sim.ob.mid_prices))),
-                    'y': self.sim.ob.mid_prices
-                }
+                x, y = zip(*self.sim.ob.mid_prices)
+                mid_price_data = {'times': list(x),
+                                  'prices': list(y)}
             return jsonify(mid_price_data)
 
         @self.app.route('/orderbook')
@@ -303,24 +305,6 @@ class Server:
             with self.sim.lock:
                 users_list = list(self.sim.ob.user_positions.keys())
             return jsonify(users_list)
-
-        @self.app.route('/pnl/<user>')
-        def pnl(user: str) -> dict:
-            """
-            Returns the PnL of a user.
-
-            Arguments
-            ---------
-            user :  The user.
-
-            Returns
-            -------
-            The PnL of the user as a JSON response.
-
-            """
-            with self.sim.lock:
-                user_pnl = self.sim.ob.get_pnl(user)
-            return jsonify({'user': user, 'pnl': str(user_pnl)})
         
         @self.app.route('/pnl_history/<user>')
         def pnl_history(user: str) -> dict:
@@ -337,9 +321,10 @@ class Server:
 
             """
             with self.sim.lock:
-                pnl_history = self.sim.ob.user_pnls[user]
-                pnl_data = list(map(float, pnl_history))
-            return jsonify({'user': user, 'pnl': pnl_data})
+                x, y = zip(*self.sim.ob.user_pnls[user])
+            return jsonify({'user': user, 
+                            'times': list(x),
+                            'pnls': list(y)})
         
         @self.app.route('/positions/<user>')
         def positions(user: str) -> dict:
@@ -356,9 +341,10 @@ class Server:
 
             """
             with self.sim.lock:
-                positions = self.sim.ob.user_positions.get(user, [])
-                positions_data = list(map(float, positions))
-            return jsonify({'user': user, 'positions': positions_data})
+                x, y = zip(*self.sim.ob.user_positions.get(user, []))
+            return jsonify({'user': user, 
+                            'times': list(x),
+                            'positions': list(y)})
 
     def run_simulation(self) -> None:
         """
@@ -373,7 +359,7 @@ class Server:
                      take_volume=self.take_volume,
                      make_volume=self.make_volume,
                      bid_prob=self.bid_prob,
-                     sleep=self.sleep)
+                     mean_sleep=self.sleep)
 
     def start(self) -> None:
         """
