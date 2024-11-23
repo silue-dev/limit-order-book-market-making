@@ -32,10 +32,12 @@ class MarketSimulator:
         self.default_user = 'basic-market-maker'
 
     def add_random_limit_orders(self, 
-                                mid_price: Decimal, 
-                                volume: float = 100.0,
+                                mid_price: float, 
+                                volume: float = 10.0,
                                 std: float = 0.10, 
-                                noise: float = 10.0) -> tuple[deque[int], 
+                                noise: float = 10.0,
+                                levels: int = 15,
+                                precision: float = 0.10) -> tuple[deque[int], 
                                                               deque[int]]:
         """
         Adds random limit orders to the order book.
@@ -56,15 +58,15 @@ class MarketSimulator:
         bid_ids = []
         ask_ids = []
 
-        for i in range(10):
+        for i in range(levels):
             bid_price = mid_price - i * 0.1
             ask_price = mid_price + i * 0.1
 
             bid_volume = volume * norm.pdf(bid_price, 
-                                          mid_price - 4 * std, std) \
+                                          mid_price - levels / 2 * precision, std) \
                                           + random.gauss(0, noise)
             ask_volume = volume * norm.pdf(ask_price, 
-                                          mid_price + 4 * std, std) \
+                                          mid_price + levels / 2 * precision, std) \
                                           + random.gauss(0, noise)
             bid_volume = max(0, bid_volume)
             ask_volume = max(0, ask_volume)
@@ -131,7 +133,7 @@ class MarketSimulator:
     def run(self, 
             init_price: float = 100.0,
             steps: int = None, 
-            take_volume: float = 25.0,
+            take_volume: float = 10.0,
             make_volume: float = 10.0,
             bid_prob: float = 0.5,
             sleep: float = 0.05,
@@ -153,7 +155,7 @@ class MarketSimulator:
         """
         # Initialize order book.
         bid_ids, ask_ids = self.add_random_limit_orders(
-            mid_price=Decimal(init_price)
+            mid_price=init_price
         )
         self.bid_id_history += bid_ids
         self.ask_id_history += ask_ids
@@ -169,23 +171,33 @@ class MarketSimulator:
         # Run simluation.
         while steps is None or step < steps:
             if elapsed_time >= next_market_order_time:
-                take_volume = lognorm(2.0, scale=take_volume).rvs()
-                take_volume = max(take_volume, self.max_order_volume)
+                take_volume += lognorm(1.0, scale=take_volume / 4).rvs()
+                take_volume = min(take_volume, self.max_order_volume)
                 
                 self.add_random_market_order(user=None, 
                                              volume=take_volume, 
                                              bid_prob=bid_prob)
                 next_market_order_time += np.random.exponential(1 / market_order_rate)
 
-            mid_price = self.ob.get_mid_price()
+            mid_price = float(self.ob.get_mid_price())
             bid_ids, ask_ids = self.add_random_limit_orders(mid_price=mid_price, 
                                                             volume=make_volume)
+            
+            # Random spike.
+            if random.random() < 0.002:
+                mid_price *= 1 + random.choice([-1, 1]) * random.randint(1, 3) / 100
+                print('\nspike\n', flush=True)
+                for _ in range(8):
+                    more_bid_ids, more_ask_ids = self.add_random_limit_orders(mid_price=mid_price, 
+                                                                              volume=make_volume)
+                    bid_ids += more_bid_ids
+                    ask_ids += more_ask_ids
+                        
             self.bid_id_history += bid_ids
             self.ask_id_history += ask_ids
             self.del_old_orders()
             step += 1
 
-            # Sleep for the fixed interval and update elapsed time
             time.sleep(sleep)
             elapsed_time += sleep
 
@@ -208,7 +220,7 @@ class Server:
     def __init__(self, 
                  init_price: float = 100.0,
                  steps: int = None, 
-                 take_volume: float = 25.0,
+                 take_volume: float = 10.0,
                  make_volume: float = 10.0,
                  max_order_volume: float = 100.0,
                  max_ladder_volume: float = 1000.0,
@@ -393,7 +405,7 @@ class Server:
 if __name__ == '__main__':
     server = Server(init_price=100.0,
                     bid_prob=0.5,
-                    take_volume=25.0,
+                    take_volume=10.0,
                     make_volume=10.0,
                     max_order_volume=100.0,
                     max_ladder_volume=1000.0,

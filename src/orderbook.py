@@ -348,7 +348,7 @@ class OrderBook:
 
         return unrealized_pnl + realized_pnl
     
-    def get_visualization_data(self, depth: int = 10) -> dict:
+    def get_visualization_data(self, depth: int = 15) -> dict:
         """
         Returns the order book data for visualization.
 

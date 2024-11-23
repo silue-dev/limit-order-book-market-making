@@ -6,7 +6,7 @@ from marketmaker import MarketMaker
 def run_market_simulator(
     init_price: float = 100.0,
     bid_prob: float = 0.5,
-    take_volume: float = 25.0,
+    take_volume: float = 10.0,
     make_volume: float = 10.0,
     max_order_volume: float = 100.0,
     max_ladder_volume: float = 1000.0,
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     simulator_params = {
         'init_price': 100.0,
         'bid_prob': 0.5,
-        'take_volume': 25.0,
+        'take_volume': 10.0,
         'make_volume': 10.0,
         'max_order_volume': 100.0,
         'max_ladder_volume': 1000.0,
@@ -80,10 +80,10 @@ if __name__ == '__main__':
     market_maker_params = {
         'user': 'basic-market-maker',
         'server_url': 'http://localhost:5001',
-        'spread': 0.1,
+        'spread': 0.2,
         'max_volume': 10.0,
         'max_delta': 100.0,
-        'sleep': 0.5,
+        'sleep': 1.25,
         'start_delay': 1.0
     }
 
