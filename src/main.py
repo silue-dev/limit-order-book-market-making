@@ -40,7 +40,7 @@ def run_market_maker(
     user: str = 'basic-market-maker',
     server_url: str = 'http://localhost:5001',
     spread: float = 0.1,
-    max_volume: float = 5.0,
+    max_volume: float = 10.0,
     max_delta: float = 100.0,
     sleep: float = 1.0,
     start_delay: float = 5.0) -> None:
@@ -75,7 +75,7 @@ if __name__ == '__main__':
         'make_volume': 10.0,
         'max_order_volume': 100.0,
         'max_ladder_volume': 1000.0,
-        'sleep': 0.05
+        'sleep': 0.1
     }
     market_maker_params = {
         'user': 'basic-market-maker',
@@ -83,7 +83,7 @@ if __name__ == '__main__':
         'spread': 0.1,
         'max_volume': 10.0,
         'max_delta': 100.0,
-        'sleep': 1.0,
+        'sleep': 0.5,
         'start_delay': 1.0
     }
 

@@ -3,7 +3,7 @@ import random
 import threading
 import numpy as np
 from decimal import Decimal
-from scipy.stats import norm
+from scipy.stats import norm, lognorm
 from collections import deque
 from flask import Flask, render_template, jsonify, request
 from orderbook import OrderBook
@@ -20,8 +20,10 @@ class MarketSimulator:
     """
     def __init__(self, 
                  ob: OrderBook, 
+                 max_order_volume: float = 100.0,
                  max_ladder_volume: float = 1000.0) -> None:
         self.ob = ob
+        self.max_order_volume = max_order_volume
         self.max_ladder_volume = max_ladder_volume
 
         self.bid_id_history = deque()
@@ -129,36 +131,52 @@ class MarketSimulator:
     def run(self, 
             init_price: float = 100.0,
             steps: int = None, 
-            take_volume: float = 10.0,
+            take_volume: float = 25.0,
             make_volume: float = 10.0,
             bid_prob: float = 0.5,
-            mean_sleep: float = 0.1) -> None:
+            sleep: float = 0.05,
+            market_order_rate: float = 15.0) -> None:
         """
         Runs the market simulator.
 
         Arguments
         ---------
-        init_price  :  The initial price.
-        steps       :  The number of steps to run. If None, runs indefinitely.
-        take_volume :  The base taker (i.e., market order) volume.
-        make_volume :  The base maker (i.e., limit order) volume.
-        bid_prob    :  The probability of adding a bid order.
-        mean_sleep  :  The mean time to sleep between steps.
+        init_price        :  The initial price.
+        steps             :  The number of steps to run. If None, runs indefinitely.
+        take_volume       :  The base taker (i.e., market order) volume.
+        make_volume       :  The base maker (i.e., limit order) volume.
+        bid_prob          :  The probability of adding a bid order.
+        sleep             :  The time to sleep between steps.
+        market_order_rate :  The rate parameter (λ) for the exponential distribution
+                             determining market orders per second.
 
         """
+        # Initialize order book.
         bid_ids, ask_ids = self.add_random_limit_orders(
             mid_price=Decimal(init_price)
         )
-        _ = self.ob.user_positions[self.default_user]
-
         self.bid_id_history += bid_ids
         self.ask_id_history += ask_ids
 
+        # Initialize default user.
+        _ = self.ob.user_positions[self.default_user]
+
+        # Setup time tracking.
         step = 0
+        elapsed_time = 0.0
+        next_market_order_time = np.random.exponential(1 / market_order_rate)
+
+        # Run simluation.
         while steps is None or step < steps:
-            self.add_random_market_order(user=None, 
-                                         volume=take_volume, 
-                                         bid_prob=bid_prob)
+            if elapsed_time >= next_market_order_time:
+                take_volume = lognorm(2.0, scale=take_volume).rvs()
+                take_volume = max(take_volume, self.max_order_volume)
+                
+                self.add_random_market_order(user=None, 
+                                             volume=take_volume, 
+                                             bid_prob=bid_prob)
+                next_market_order_time += np.random.exponential(1 / market_order_rate)
+
             mid_price = self.ob.get_mid_price()
             bid_ids, ask_ids = self.add_random_limit_orders(mid_price=mid_price, 
                                                             volume=make_volume)
@@ -167,8 +185,9 @@ class MarketSimulator:
             self.del_old_orders()
             step += 1
 
-            sleep_time = np.random.exponential(mean_sleep)
-            time.sleep(sleep_time)
+            # Sleep for the fixed interval and update elapsed time
+            time.sleep(sleep)
+            elapsed_time += sleep
 
 class Server:
     """
@@ -189,12 +208,12 @@ class Server:
     def __init__(self, 
                  init_price: float = 100.0,
                  steps: int = None, 
-                 take_volume: float = 10.0,
+                 take_volume: float = 25.0,
                  make_volume: float = 10.0,
                  max_order_volume: float = 100.0,
                  max_ladder_volume: float = 1000.0,
                  bid_prob: float = 0.5,
-                 sleep: float = 0.1) -> None:
+                 sleep: float = 0.05) -> None:
         self.init_price = init_price
         self.steps = steps
         self.take_volume = take_volume
@@ -353,13 +372,14 @@ class Server:
         """
         ob = OrderBook(max_order_volume=self.max_order_volume)
         self.sim = MarketSimulator(ob=ob,
+                                   max_order_volume=self.max_order_volume,
                                    max_ladder_volume=self.max_ladder_volume)
         self.sim.run(init_price=self.init_price,
                      steps=self.steps, 
                      take_volume=self.take_volume,
                      make_volume=self.make_volume,
                      bid_prob=self.bid_prob,
-                     mean_sleep=self.sleep)
+                     sleep=self.sleep)
 
     def start(self) -> None:
         """
@@ -377,5 +397,5 @@ if __name__ == '__main__':
                     make_volume=10.0,
                     max_order_volume=100.0,
                     max_ladder_volume=1000.0,
-                    sleep=0.05)
+                    sleep=0.1)
     server.start()

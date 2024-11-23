@@ -26,7 +26,6 @@ class OrderBook:
         self.user_trades = defaultdict(list)
         self.user_positions = defaultdict(lambda: [(self.init_time, Decimal(0))])
         self.user_pnls = defaultdict(lambda: [(self.init_time, Decimal(0))])
-
         self.mid_prices = []
     
     def reset(self) -> None:
@@ -52,7 +51,9 @@ class OrderBook:
 
         """
         order = self.to_order_object(order_dict)
+        current_time = datetime.fromtimestamp(time()).isoformat()
 
+        # Process order.
         if order.kind == 'market':
             self.add_market_order(order)
 
@@ -61,6 +62,16 @@ class OrderBook:
 
         elif order.kind == 'ioc':
             self.add_ioc_order(order)
+
+        # Update all user pnls and positions.
+        for user in self.user_trades.keys():
+            self.user_pnls[user].append((current_time, self.get_pnl(user)))
+            self.user_positions[user].append(
+                (current_time, self.user_positions[user][-1][1])
+            )
+
+        # Update the stored mid prices.
+        self.mid_prices.append((current_time, self.get_mid_price()))
 
         return order.id
     
@@ -209,7 +220,7 @@ class OrderBook:
         for user in self.user_trades.keys():
             self.user_pnls[user].append((trade_time, self.get_pnl(user)))
 
-        # Update the stored mid prices their timestamps.
+        # Update the stored mid prices.
         self.mid_prices.append((trade_time, self.get_mid_price()))
 
     def del_order(self, id: str) -> bool:
