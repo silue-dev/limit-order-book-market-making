@@ -46,7 +46,7 @@ class OrderBook:
                       * 'side' (str) : The side of the order (i.e., 'bid' or 'ask').
                       * 'price' (Decimal) : The price at which to place the order.
                       * 'volume' (Decimal) : The volume of the order.
-                      * 'kind' (str) : The kind of order (i.e., 'market', 'limit', or 'ioc').
+                      * 'kind' (str) : The kind of order (e.g., 'market', 'limit', etc.).
                       * 'user' (str) : The name of the user who created the order.
 
         """
@@ -62,6 +62,9 @@ class OrderBook:
 
         elif order.kind == 'ioc':
             self.add_ioc_order(order)
+
+        elif order.kind == 'post-only':
+            self.add_post_only_order(order)
 
         # Update all user pnls and positions.
         for user in self.user_trades.keys():
@@ -149,7 +152,27 @@ class OrderBook:
                   and order.price <= self.bids.get_best_price():
                 order, head_order, traded_price, traded_volume = self.bids.match_order(order)
                 self.add_trade_to_tape(order, head_order, traded_price, traded_volume)
-    
+
+    def add_post_only_order(self, order: Order) -> None:
+        """
+        Adds an Post-Only order to the order book.
+
+        Arguments
+        ---------
+        order :  The Post-Only order to be added.
+
+        """
+        best_bid = self.get_best_bid()
+        best_ask = self.get_best_ask()
+
+        if order.side == 'bid':
+            if best_ask is None or order.price < best_ask:
+                self.bids.add_order(order)
+        
+        elif order.side == 'ask':
+            if best_bid is None or order.price > best_bid:
+                self.asks.add_order(order)
+
     def add_trade_to_tape(self,
                           order: Order,
                           head_order: Order,
@@ -278,7 +301,7 @@ class OrderBook:
                       * 'side' (str) : The side of the order (i.e., 'bid' or 'ask').
                       * 'price' (float) : The price at which to place the order.
                       * 'volume' (float) : The volume of the order (limited to 100).
-                      * 'kind' (str) : The kind of order (i.e., 'market', 'limit', or 'ioc').
+                      * 'kind' (str) : The kind of order (e.g., 'market', 'limit', etc.).
                       * 'user' (str) : The name of the user who created the order.
 
         Returns

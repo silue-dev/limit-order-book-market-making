@@ -13,7 +13,7 @@ class Order:
     side   :  The side of the order ('bid' or 'ask').
     price  :  The price of the order.
     volume :  The volume of the order.
-    kind   :  The kind of the order ('market', 'limit', or 'ioc').
+    kind   :  The kind of the order (e.g., 'market', 'limit', etc.).
     user   :  The name of the user who created the order.
 
     """

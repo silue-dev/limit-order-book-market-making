@@ -15,6 +15,7 @@ class MarketSimulator:
     Arguments
     ---------
     ob                :  The order book to simulate the market on.
+    max_order_volume  :  The maximum volume of a single order.
     max_ladder_volume :  The approximate maximum volume of an order ladder.
     
     """
@@ -136,6 +137,8 @@ class MarketSimulator:
             take_volume: float = 10.0,
             make_volume: float = 10.0,
             bid_prob: float = 0.5,
+            spike_prob: float = 0.002,
+            max_spike_size: int = 8,
             sleep: float = 0.05,
             market_order_rate: float = 15.0) -> None:
         """
@@ -148,6 +151,8 @@ class MarketSimulator:
         take_volume       :  The base taker (i.e., market order) volume.
         make_volume       :  The base maker (i.e., limit order) volume.
         bid_prob          :  The probability of adding a bid order.
+        spike_prob        :  The probability of the price spiking in one direction.
+        max_spike_size    :  The maximum size of a spike.
         sleep             :  The time to sleep between steps.
         market_order_rate :  The rate parameter (λ) for the exponential distribution
                              determining market orders per second.
@@ -184,10 +189,14 @@ class MarketSimulator:
                                                             volume=make_volume)
             
             # Random spike.
-            if random.random() < 0.002:
+            if random.random() < spike_prob:
                 mid_price *= 1 + random.choice([-1, 1]) * random.randint(1, 3) / 100
                 print('\nspike\n', flush=True)
-                for _ in range(8):
+
+                min_spike_size = max_spike_size // 2
+                spike_size = random.randint(min_spike_size, max_spike_size)
+
+                for _ in range(spike_size):
                     more_bid_ids, more_ask_ids = self.add_random_limit_orders(mid_price=mid_price, 
                                                                               volume=make_volume)
                     bid_ids += more_bid_ids
@@ -214,8 +223,11 @@ class Server:
     max_order_volume   :  The maximum volume of a single order.
     max_ladder_volume  :  The approximate maximum volume of an order ladder.
     bid_prob           :  The probability of adding a bid order.
+    spike_prob         :  The probability of the price spiking in one direction.
+    max_spike_size     :  The maximum size of a spike.
     sleep              :  The time to sleep between steps.
-    
+    seed               :  The random seed.
+
     """
     def __init__(self, 
                  init_price: float = 100.0,
@@ -225,7 +237,10 @@ class Server:
                  max_order_volume: float = 100.0,
                  max_ladder_volume: float = 1000.0,
                  bid_prob: float = 0.5,
-                 sleep: float = 0.05) -> None:
+                 spike_prob: float = 0.002,
+                 max_spike_size: int = 8,
+                 sleep: float = 0.05,
+                 seed: int | None = None) -> None:
         self.init_price = init_price
         self.steps = steps
         self.take_volume = take_volume
@@ -233,9 +248,15 @@ class Server:
         self.max_order_volume = max_order_volume
         self.max_ladder_volume = max_ladder_volume
         self.bid_prob = bid_prob
+        self.spike_prob = spike_prob
+        self.max_spike_size = max_spike_size
         self.sleep = sleep
+        self.seed = seed
         self.app = Flask(__name__)
         self.sim = None
+
+        random.seed(self.seed)
+        np.random.seed(self.seed)
 
         @self.app.route('/')
         def index() -> str:
@@ -277,7 +298,7 @@ class Server:
             side   :  The side of the order ('bid' or 'ask').
             price  :  The price of the order.
             volume :  The volume of the order.
-            kind   :  The kind of order ('market', 'limit', or 'ioc').
+            kind   :  The kind of order (e.g., 'market', 'limit', etc.).
             user   :  The user placing the order.
 
             Returns
@@ -391,6 +412,8 @@ class Server:
                      take_volume=self.take_volume,
                      make_volume=self.make_volume,
                      bid_prob=self.bid_prob,
+                     spike_prob=self.spike_prob,
+                     max_spike_size=self.max_spike_size,
                      sleep=self.sleep)
 
     def start(self) -> None:

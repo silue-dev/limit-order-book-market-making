@@ -6,11 +6,14 @@ from marketmaker import MarketMaker
 def run_market_simulator(
     init_price: float = 100.0,
     bid_prob: float = 0.5,
+    spike_prob: float = 0.002,
+    max_spike_size: int = 8,
     take_volume: float = 10.0,
     make_volume: float = 10.0,
     max_order_volume: float = 100.0,
     max_ladder_volume: float = 1000.0,
-    sleep: float = 0.05) -> None:
+    sleep: float = 0.05,
+    seed: int | None = None) -> None:
     """
     Initializes and starts the market simulation server.
 
@@ -18,21 +21,27 @@ def run_market_simulator(
     ---------
     init_price         :  The initial price for the market simulator.
     bid_prob           :  The probability of adding a bid order.
+    spike_prob         :  The probability of the price spiking in one direction.
+    max_spike_size     :  The maximum size of a spike.
     take_volume        :  The base taker (i.e., market order) volume.
     make_volume        :  The base maker (i.e., limit order) volume.
     max_order_volume   :  The maximum volume of a single order.
     max_ladder_volume  :  The approximate maximum volume of an order ladder.
     sleep              :  The time to sleep between steps in seconds.
+    seed               :  The random seed.
 
     """
     server = Server(
         init_price=init_price,
         bid_prob=bid_prob,
+        spike_prob=spike_prob,
+        max_spike_size=max_spike_size,
         take_volume=take_volume,
         make_volume=make_volume,
         max_order_volume=max_order_volume,
         max_ladder_volume=max_ladder_volume,
-        sleep=sleep
+        sleep=sleep,
+        seed=seed
     )
     server.start()
 
@@ -42,8 +51,9 @@ def run_market_maker(
     spread: float = 0.1,
     max_volume: float = 10.0,
     max_delta: float = 100.0,
+    order_kind: str = 'post-only',
     sleep: float = 1.0,
-    start_delay: float = 5.0) -> None:
+    start_delay: float = 1.0) -> None:
     """
     Initializes and starts the market maker agent.
 
@@ -54,13 +64,15 @@ def run_market_maker(
     spread      :  The spread of the quote.
     max_volume  :  The maximum volume of the quote orders.
     max_delta   :  The maximum (absolute) inventory position size. 
+    order_kind  :  The kind of order (e.g., 'market', 'limit', etc.).
     sleep       :  The time to wait in seconds before deleting the quotes.
     start_delay :  The initial delay before starting the market maker.
 
     """
     time.sleep(start_delay)
     agent = MarketMaker(user=user, 
-                        server_url=server_url)
+                        server_url=server_url,
+                        order_kind=order_kind)
     agent.run(spread=spread, 
               max_volume=max_volume, 
               max_delta=max_delta,
@@ -71,20 +83,23 @@ if __name__ == '__main__':
     simulator_params = {
         'init_price': 100.0,
         'bid_prob': 0.5,
+        'spike_prob': 0.001,
+        'max_spike_size': 10,
         'take_volume': 10.0,
         'make_volume': 10.0,
         'max_order_volume': 100.0,
         'max_ladder_volume': 1000.0,
-        'sleep': 0.1
+        'sleep': 0.1,
+        'seed': 42
     }
     market_maker_params = {
         'user': 'basic-market-maker',
         'server_url': 'http://localhost:5001',
         'spread': 0.2,
         'max_volume': 10.0,
-        'max_delta': 100.0,
-        'sleep': 1.25,
-        'start_delay': 1.0
+        'max_delta': 100,
+        'order_kind': 'limit',
+        'sleep': 1.0,
     }
 
     server_thread: Thread = Thread(target=run_market_simulator, 

@@ -17,10 +17,12 @@ class MarketMaker:
     def __init__(self, 
                  user: str, 
                  server_url: str = 'http://localhost:5001',
+                 order_kind: str = 'post-only',
                  volume: float = 100.0, 
                  noise: float = 10.0) -> None:
         self.user = user
         self.server_url = server_url
+        self.order_kind = order_kind
         self.volume = volume
         self.noise = noise
         self.precision = Decimal('0.1')
@@ -65,7 +67,7 @@ class MarketMaker:
                   bid_volume: Decimal,
                   ask_volume: Decimal) -> tuple[str, str]:
         """
-        Places a quote (i.e., one limit bid and one limit ask order)
+        Places a quote (i.e., one bid and one ask order)
         around the current mid price.
 
         Arguments
@@ -73,9 +75,9 @@ class MarketMaker:
         indiff_price :  The price at which the market maker is indifferent
                         to buy or sell. This is also called the fair value
                         price or the reservation price.
-        spread       :  The spread between the limit bid and the limit ask.
-        bid_volume   :  The volume of the bid limit order.
-        ask_volume   :  The volume of the ask limit order.
+        spread       :  The spread between the bid and the ask.
+        bid_volume   :  The volume of the bid order.
+        ask_volume   :  The volume of the ask order.
 
         Returns
         -------
@@ -90,12 +92,12 @@ class MarketMaker:
         bid_order_dict = {'side': 'bid', 
                           'price': float(bid_price), 
                           'volume': float(bid_volume), 
-                          'kind': 'limit',
+                          'kind': self.order_kind,
                           'user': self.user}
         ask_order_dict = {'side': 'ask', 
                           'price': float(ask_price), 
                           'volume': float(ask_volume), 
-                          'kind': 'limit',
+                          'kind': self.order_kind,
                           'user': self.user}
 
         bid_order_id = self.add_order(bid_order_dict)
