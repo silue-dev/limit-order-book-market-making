@@ -223,21 +223,20 @@ class OrderBook:
         for user in self.user_trades.keys():
             if user not in [order.user, head_order.user]:
                 self.user_positions[user].append((trade_time, self.user_positions[user][-1][1]))
-            else:
-                if order.side == 'bid':
-                    if order.user != None: self.user_positions[order.user].append(
-                        (trade_time, self.user_positions[order.user][-1][1] + volume_traded)
-                        )
-                    if head_order.user != None: self.user_positions[head_order.user].append(
-                        (trade_time, self.user_positions[head_order.user][-1][1] - volume_traded)
-                        )
-                elif order.side == 'ask':
-                    if order.user != None: self.user_positions[order.user].append(
-                        (trade_time, self.user_positions[order.user][-1][1] - volume_traded)
-                        )
-                    if head_order.user != None: self.user_positions[head_order.user].append(
-                        (trade_time, self.user_positions[head_order.user][-1][1] + volume_traded)
-                        )
+        if order.side == 'bid':
+            if order.user != None: self.user_positions[order.user].append(
+                (trade_time, self.user_positions[order.user][-1][1] + volume_traded)
+                )
+            if head_order.user != None: self.user_positions[head_order.user].append(
+                (trade_time, self.user_positions[head_order.user][-1][1] - volume_traded)
+                )
+        elif order.side == 'ask':
+            if order.user != None: self.user_positions[order.user].append(
+                (trade_time, self.user_positions[order.user][-1][1] - volume_traded)
+                )
+            if head_order.user != None: self.user_positions[head_order.user].append(
+                (trade_time, self.user_positions[head_order.user][-1][1] + volume_traded)
+                )
         
         # Update all user pnls.
         for user in self.user_trades.keys():
@@ -289,6 +288,20 @@ class OrderBook:
         else:
             mid_price = None
         return mid_price
+    
+    def get_mark_price(self) -> Decimal | None:
+        """
+        Returns the price used to mark open positions.
+
+        """
+        mid_price = self.get_mid_price()
+        if mid_price is not None:
+            mark_price = mid_price
+        elif self.tape:
+            mark_price = Decimal(self.tape[-1]['price'])
+        else:
+            mark_price = None
+        return mark_price
     
     def to_order_object(self, order_dict: dict) -> Order:
         """
@@ -357,7 +370,11 @@ class OrderBook:
         The current PnL of the user.
 
         """
-        unrealized_pnl = self.user_positions[user][-1][1] * self.get_mid_price()
+        mark_price = self.get_mark_price()
+        if mark_price is not None:
+            unrealized_pnl = self.user_positions[user][-1][1] * mark_price
+        else:
+            unrealized_pnl = Decimal(0)
 
         trades = self.user_trades[user]
         realized_pnl = Decimal(0)
